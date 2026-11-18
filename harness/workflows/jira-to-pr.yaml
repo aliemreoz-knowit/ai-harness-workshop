@@ -1,0 +1,67 @@
+# jira-to-pr -- the main workflow: ticket -> plan -> implement <-> gates ->
+# tests -> full ladder (fail -> implement) -> review (reject -> implement) ->
+# approval -> branch + commit.
+#
+# Step kinds: ticket | agent | agent_gated | gates | review | approval | commit
+# approval:   human (ask; auto-passed but COUNTED in --mode eval) | auto (never ask)
+name: jira-to-pr
+description: Ticket to a reviewed, gate-green local branch with one commit (never pushed).
+inputs: [ticket]
+
+steps:
+  - id: ticket
+    kind: ticket
+    # instruction-like text in the ticket: ask a human before any model sees it
+    approval: human
+
+  - id: plan
+    kind: agent
+    role: planner
+    prompt: plan
+    artifact: plan.md
+    approval: human
+
+  - id: implement
+    kind: agent_gated
+    role: implementer
+    prompt: implement
+    gates: fast
+    # retry_budget: 3            # default: loop.retry_budget in harness.yaml
+    on_exhausted: escalate
+    approval: auto
+
+  - id: tests
+    kind: agent_gated
+    role: test-writer
+    prompt: add-tests
+    gates: fast
+    # a bug ticket needs a regression test: the step is not done until a file under
+    # tests/ was added or changed (checked after the gates, structured feedback, retry budget)
+    require_test_change: bug
+    on_exhausted: escalate
+    approval: auto
+
+  - id: ladder
+    kind: gates
+    gates: ladder
+    # the full ladder before the review: the reviewer judges a change whose gates all
+    # passed; a failure goes back to the implementer (and the test-writer) with the
+    # structured feedback, at most loop.ladder_rounds times, then a human decides
+    on_fail: implement
+
+  - id: review
+    kind: review
+    role: reviewer
+    prompt: review
+    artifact: review.md
+    on_reject: implement
+    # max_rounds: 2              # default: loop.review_rounds
+    approval: auto
+
+  - id: merge-approval
+    kind: approval
+    approval: human
+    message: Create the branch and commit the change?
+
+  - id: commit
+    kind: commit

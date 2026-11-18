@@ -1,0 +1,18 @@
+# What the eval code reads of this ticket: its ticket branch, the paths a change may touch and the
+# held-back tests. The tests themselves are in tests/.
+id: TS-112
+title: "Stream crawls after the viewer changes its rate"
+kind: bug
+eval: true
+ticket_branch: ticket/TS-112
+modules: [proto, rate]
+allowed_paths:
+  - src/rate/**
+  - src/clients/**
+  - src/net/**
+  - tests/unit/**
+  - tests/loopback/**
+  - scripts/test_manifest.txt
+hidden_tests:
+  - tests/loopback/test_lb_set_rate_eval.c
+  - tests/unit/test_rate_change_eval.c

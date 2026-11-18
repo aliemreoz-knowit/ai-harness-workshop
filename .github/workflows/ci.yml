@@ -1,0 +1,38 @@
+# ci -- build and test on every push and pull request: the `host` CMake preset (configure, build,
+# ctest). No secrets, no Copilot: it runs the same for a fork and for a pull request.
+#
+# The gates (scripts/check.sh) and the harness stay in the dev image on the facilitator's machine;
+# this only proves that the tree builds warnings-free and its tests pass on a clean Ubuntu runner.
+# gcc-12 is the dev image's compiler (Debian bookworm): the build is -Werror, so the runner's newer
+# default gcc could fail on a warning the pinned toolchain never sees.
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  host:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false       # nothing after this step needs the token
+
+      - name: Toolchain (gcc-12 and ninja, as in the dev image)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc-12 ninja-build
+
+      - name: Configure (host preset)
+        run: cmake --preset host -DCMAKE_C_COMPILER=gcc-12
+
+      - name: Build
+        run: cmake --build --preset host --parallel
+
+      - name: Test
+        run: ctest --preset host

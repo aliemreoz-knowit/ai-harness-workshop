@@ -1,0 +1,22 @@
+# Python packages of /opt/venv, exact versions (pip freeze of the verified image,
+# 2026-10-20; pytest and its dependencies added 2026-10-22 for the harness tests).
+# Installed with --no-deps, then `pip check` verifies the set.
+annotated-types==0.8.0
+anyio==4.15.1
+certifi==2026.10.19
+github-copilot-sdk==1.0.23
+h11==0.16.0
+httpcore==1.0.9
+httpx==0.28.1
+idna==3.20
+iniconfig==2.3.0
+packaging==26.2
+pluggy==1.6.0
+pydantic==2.14.1
+pydantic_core==2.50.1
+Pygments==2.20.0
+pytest==9.0.3
+python-dateutil==2.9.0.post0
+six==1.17.0
+typing-inspection==0.4.4
+typing_extensions==4.16.0

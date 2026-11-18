@@ -1,0 +1,28 @@
+# cppcheck suppressions for gate misra (scripts/check.sh misra).
+# Format: <id>[:<file>[:<line>]]   -- one per line, each with a justification above it.
+# Rule subset is selected in scripts/misra.json; this file holds JUSTIFIED exceptions only.
+
+# misra-config: rule checks that need the (non-redistributable) rule texts; we
+# only run the subset, the text is not needed for the gate to fail/pass.
+misra-config
+
+# 21.6 (stdio) and 21.8 (abort/exit): allowed in start-up / shutdown code and
+# in tools, never in daemon hot paths. The daemon start-up files are listed here.
+misra-c2012-21.6:src/main.c
+misra-c2012-21.8:src/main.c
+misra-c2012-21.8:src/malloc_guard.c
+# 21.3: the receiver tool may allocate once at start (tsr_create); the daemon never.
+misra-c2012-21.3:tools/tsrecv/lib/receiver.c
+misra-c2012-21.3:src/malloc_guard.c
+# 21.6: tools print; the log dump renders with stdio only when TS_LOG_ENABLED.
+misra-c2012-21.6:tools/tsrecv/main.c
+misra-c2012-21.6:tools/tsnetem/main.c
+misra-c2012-21.6:src/log/log.c
+
+# cppcheck "style" noise that the harness does not treat as a defect:
+unusedFunction
+missingIncludeSystem
+# _Static_assert expressions and constant configuration comparisons
+knownConditionTrueFalse
+# the generated vectors table is data
+*:tests/vectors/ts_vectors.c

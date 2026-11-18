@@ -1,0 +1,18 @@
+# What the eval code reads of this ticket: its ticket branch, the paths a change may touch and the
+# held-back tests. The tests themselves are in tests/.
+id: TS-101
+title: "Mission board needs per-viewer numbers from the daemon"
+kind: feature
+eval: false
+ticket_branch: ticket/TS-101
+modules: [clients, net, proto, tsrecv]
+allowed_paths:
+  - src/clients/**
+  - src/net/**
+  - tools/tsrecv/**
+  - tests/unit/**
+  - tests/loopback/**
+  - scripts/test_manifest.txt
+hidden_tests:
+  - tests/loopback/test_lb_per_client_stats.c
+  - tests/unit/test_clients_stats_eval.c

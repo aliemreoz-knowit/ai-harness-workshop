@@ -1,0 +1,105 @@
+# agent-fix -- OPTIONAL team trigger in GitHub Actions: label an issue `agent:fix` and the
+# harness (jira-to-pr) runs in CI, pushes an agent branch, opens a PR, comments and adds a check.
+# The polling bridge (tools/bridge/bridge.py) does the same from the facilitator laptop and is
+# the default; this workflow is the "if policy allows" variant (tools/bridge/README.md).
+#
+# INERT unless BOTH hold:
+#   - the repository is owned by an ORGANIZATION (Copilot requests from Actions -- the
+#     `copilot-requests: write` permission -- are billed to an org Copilot plan; a personal
+#     repository has none, so the job is skipped there),
+#   - the repository variable AGENT_FIX_ENABLED is "true" (Settings -> Secrets and variables ->
+#     Actions -> Variables), so an org fork does not start spending on its own.
+name: agent-fix
+
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: Issue number to run the harness on
+        required: true
+      runtime:
+        description: harness runtime mode (credit caps of harness.yaml runtimes.*)
+        default: facilitator
+        type: choice
+        options: [facilitator, copilot-user]
+
+permissions:
+  contents: write          # push the agent branch
+  pull-requests: write     # open the PR
+  issues: write            # labels and the bridge comment on the issue
+  checks: write            # the agent-harness check run
+  copilot-requests: write  # the Copilot CLI / SDK authenticates with GITHUB_TOKEN
+
+concurrency:
+  group: agent-fix-${{ github.event.issue.number || inputs.issue }}
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    if: >-
+      github.event.repository.owner.type == 'Organization' &&
+      vars.AGENT_FIX_ENABLED == 'true' &&
+      (github.event_name == 'workflow_dispatch' || github.event.label.name == 'agent:fix')
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      ISSUE: ${{ github.event.issue.number || inputs.issue }}
+      RUNTIME: ${{ inputs.runtime || 'facilitator' }}
+      GITHUB_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ github.token }}
+      COPILOT_GITHUB_TOKEN: ${{ github.token }}
+      COPILOT_SKIP_CLI_DOWNLOAD: "1"
+      MSYS_NO_PATHCONV: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install the pinned Copilot CLI and SDK
+        run: |
+          npm install -g @github/copilot@1.0.100
+          python -m pip install --quiet github-copilot-sdk==1.0.23
+
+      - name: Build the dev image (gates run in it)
+        run: docker build --quiet -t tinystream-dev:latest -f .devcontainer/Dockerfile .
+
+      - name: Commit identity for the harness commit step (this runner only)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Issue -> ticket, mark the issue running
+        run: python tools/bridge/bridge.py ci-start --issue "$ISSUE" --ticket-out "$RUNNER_TEMP/ticket.md"
+
+      - name: Harness doctor (no prompt)
+        run: python -m harness doctor
+
+      - name: Harness run (jira-to-pr)
+        id: harness
+        run: |
+          set +e
+          python -m harness run --workflow jira-to-pr --ticket "$RUNNER_TEMP/ticket.md" --mode eval --runtime "$RUNTIME"
+          echo "exit=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Push, PR, check run, comments
+        if: always()
+        run: python tools/bridge/bridge.py ci-finish --issue "$ISSUE" --workdir .
+
+      - name: Keep the run folder
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-run-${{ env.ISSUE }}
+          path: .harness/runs/
+          if-no-files-found: ignore
+          retention-days: 14

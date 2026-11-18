@@ -1,0 +1,199 @@
+{
+ "protocol_version": 2,
+ "generator": "scripts/protocol_vectors.py",
+ "vectors": [
+  {
+   "name": "empty",
+   "packet": "4b4e0000",
+   "entries": []
+  },
+  {
+   "name": "one",
+   "packet": "4b4e010001000200",
+   "entries": [
+    {
+     "frame_seq": 1,
+     "frag_idx": 2
+    }
+   ]
+  },
+  {
+   "name": "max32",
+   "packet": "4b4e200000000000d1030100a2070200730b0300440f040015130500e6160600b71a0700881e0800592209002a260a00fb290b00cc2d0c009d310d006e350e003f390f00103d1000e1401100b244120083481300544c140025501500f6531600c7571700985b1800695f19003a631a000b671b00dc6a1c00ad6e1d007e721e004f761f00",
+   "entries": [
+    {
+     "frame_seq": 0,
+     "frag_idx": 0
+    },
+    {
+     "frame_seq": 977,
+     "frag_idx": 1
+    },
+    {
+     "frame_seq": 1954,
+     "frag_idx": 2
+    },
+    {
+     "frame_seq": 2931,
+     "frag_idx": 3
+    },
+    {
+     "frame_seq": 3908,
+     "frag_idx": 4
+    },
+    {
+     "frame_seq": 4885,
+     "frag_idx": 5
+    },
+    {
+     "frame_seq": 5862,
+     "frag_idx": 6
+    },
+    {
+     "frame_seq": 6839,
+     "frag_idx": 7
+    },
+    {
+     "frame_seq": 7816,
+     "frag_idx": 8
+    },
+    {
+     "frame_seq": 8793,
+     "frag_idx": 9
+    },
+    {
+     "frame_seq": 9770,
+     "frag_idx": 10
+    },
+    {
+     "frame_seq": 10747,
+     "frag_idx": 11
+    },
+    {
+     "frame_seq": 11724,
+     "frag_idx": 12
+    },
+    {
+     "frame_seq": 12701,
+     "frag_idx": 13
+    },
+    {
+     "frame_seq": 13678,
+     "frag_idx": 14
+    },
+    {
+     "frame_seq": 14655,
+     "frag_idx": 15
+    },
+    {
+     "frame_seq": 15632,
+     "frag_idx": 16
+    },
+    {
+     "frame_seq": 16609,
+     "frag_idx": 17
+    },
+    {
+     "frame_seq": 17586,
+     "frag_idx": 18
+    },
+    {
+     "frame_seq": 18563,
+     "frag_idx": 19
+    },
+    {
+     "frame_seq": 19540,
+     "frag_idx": 20
+    },
+    {
+     "frame_seq": 20517,
+     "frag_idx": 21
+    },
+    {
+     "frame_seq": 21494,
+     "frag_idx": 22
+    },
+    {
+     "frame_seq": 22471,
+     "frag_idx": 23
+    },
+    {
+     "frame_seq": 23448,
+     "frag_idx": 24
+    },
+    {
+     "frame_seq": 24425,
+     "frag_idx": 25
+    },
+    {
+     "frame_seq": 25402,
+     "frag_idx": 26
+    },
+    {
+     "frame_seq": 26379,
+     "frag_idx": 27
+    },
+    {
+     "frame_seq": 27356,
+     "frag_idx": 28
+    },
+    {
+     "frame_seq": 28333,
+     "frag_idx": 29
+    },
+    {
+     "frame_seq": 29310,
+     "frag_idx": 30
+    },
+    {
+     "frame_seq": 30287,
+     "frag_idx": 31
+    }
+   ]
+  },
+  {
+   "name": "wrap_entries",
+   "packet": "4b4e0200ffff6d0000000000",
+   "entries": [
+    {
+     "frame_seq": 65535,
+     "frag_idx": 109
+    },
+    {
+     "frame_seq": 0,
+     "frag_idx": 0
+    }
+   ]
+  },
+  {
+   "name": "count_33",
+   "packet": "4b4e2100010001000100010001000100010001000100010001000100010001000100010001000100010001000100010001000100010001000100010001000100010001000100010001000100010001000100010001000100010001000100010001000100010001000100010001000100010001000100010001000100010001000100010001000100",
+   "error": "TS_E_INVAL"
+  },
+  {
+   "name": "truncated_entry",
+   "packet": "4b4e0200010001000200",
+   "error": "TS_E_TRUNC"
+  },
+  {
+   "name": "truncated_header",
+   "packet": "4b4e00",
+   "error": "TS_E_TRUNC"
+  },
+  {
+   "name": "bad_magic",
+   "packet": "4c4e010001000100",
+   "error": "TS_E_BADMAGIC"
+  },
+  {
+   "name": "extra_bytes",
+   "packet": "4b4e01000100010000",
+   "error": "TS_E_INVAL"
+  },
+  {
+   "name": "count_mismatch_long",
+   "packet": "4b4e01000100010002000200",
+   "error": "TS_E_INVAL"
+  }
+ ]
+}

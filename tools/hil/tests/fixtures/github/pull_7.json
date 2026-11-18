@@ -1,0 +1,13 @@
+{
+ "status": 200,
+ "body": {
+  "number": 7,
+  "title": "proto: CRC over the exact payload length",
+  "state": "open",
+  "html_url": "https://github.com/example-org/tinystream/pull/7",
+  "head": {"ref": "agent/unit3-crc-1a2b3c", "sha": "1111111111111111111111111111111111111111",
+           "repo": {"full_name": "example-org/tinystream"}},
+  "base": {"ref": "main", "sha": "2222222222222222222222222222222222222222"},
+  "labels": [{"name": "hil-ready"}, {"name": "unit-3"}]
+ }
+}

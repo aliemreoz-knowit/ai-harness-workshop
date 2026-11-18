@@ -1,0 +1,48 @@
+# bridge.yaml -- the team-level trigger (tools/bridge/bridge.py).
+# Secrets never live here: GITHUB_TOKEN (or GH_TOKEN), JIRA_EMAIL, JIRA_API_TOKEN come from the environment.
+# Unset keys take the defaults in bridge.py (DEFAULTS).
+
+github:
+  enabled: true
+  repo: ""                      # owner/name; empty: BRIDGE_GITHUB_REPO, GITHUB_REPOSITORY, else the 'origin' remote
+  base: main                    # PR base and the ref every run starts from
+  fix_label: "agent:fix"        # issue label -> harness jira-to-pr -> PR
+  hil_label: "hil-ready"        # PR label -> HIL queue (hil.py)
+  running_label: "agent:running"
+  done_label: "agent:pr-open"
+  failed_label: "agent:failed"
+  pr_labels: [agent]
+  consume_label: true           # remove agent:fix when the run starts (re-add it to run again)
+  key_prefix: GH                # issue 12 -> ticket key GH-12 (branch agent/gh-12-..., commit "GH-12: ...")
+  allowed_actors: []            # logins allowed to trigger; empty = anyone who may label (triage access)
+  check_name: agent-harness
+  hil_check_name: hil
+  draft_pr: false
+  same_repo_only: true          # HIL never runs a PR from a fork
+
+jira:
+  enabled: false
+  site: ""                      # https://<site>.atlassian.net, or JIRA_SITE
+  project: ""                   # Jira project key
+  trigger_statuses: ["Agent Ready"]
+  trigger_label: agent
+  consume_label: true
+  jql: ""                       # overrides project / trigger_statuses / trigger_label
+  pr_transition: "In Review"    # after the PR is open; "" = leave the status alone
+
+harness:
+  workflow: jira-to-pr
+  mode: eval                    # approvals auto-pass but are counted; escalations end the run
+  runtime: facilitator          # the facilitator login and credit caps (harness.yaml runtimes.facilitator)
+  fake: false                   # true: scripted runtime, no model calls (--fake-runtime; implied by --dry-run)
+  timeout_s: 5400
+  remote: origin
+  fetch: true                   # start from <remote>/<base> after a fetch
+  worktree_root: ""             # default <repo>/../<repo name>-bridge/worktrees (add it to the Copilot CLI trustedFolders)
+  cleanup: false                # remove the worktree after a successful run
+
+bridge:
+  state: .harness/bridge/state.json
+  hil_queue: .harness/hil/queue.jsonl
+  interval_s: 60
+  max_runs_per_poll: 1          # runs are sequential; the rest waits for the next poll

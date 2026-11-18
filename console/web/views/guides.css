@@ -1,0 +1,83 @@
+/* Guides view (views/guides.js): the unit's own guide, then the other units' guides. Tokens and the shared components
+   (.page, .section, .box, .btn) are style.css's; the view loads this file itself. */
+
+.guides {
+  max-width: 920px;
+}
+
+.guide.own {
+  border-color: var(--accent);
+}
+
+.guide-path {
+  margin: 0 0 8px;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.guide-path code {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.guide-none p {
+  margin: 0;
+}
+
+.guide-none p + p {
+  margin-top: 4px;
+}
+
+.guide-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 8px;
+}
+
+.guide-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 8px;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.guide-unit {
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+/* the guide as its author wrote it: plain text, a long one scrolls inside its box */
+.guide-text {
+  max-height: 360px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--sunken);
+  font: 13px/20px var(--mono);
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 639px) {
+  .guide-head .btn {
+    width: 100%;
+  }
+}

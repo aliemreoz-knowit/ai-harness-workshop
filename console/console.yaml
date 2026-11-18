@@ -1,0 +1,58 @@
+# Settings of your personal Harness Console. Every key is optional; a missing key uses the console's default.
+# Your checkout is the source and the harness, the data lives in <checkout>/.console-data, and the console
+# listens on this computer only, so no paths, units or hosts are set here.
+# Environment override: CONSOLE_PORT.
+
+port: 8765
+unit_budget: 60                 # credits per day (python -m console serve --personal --budget N changes it)
+run_cap: 30                     # credits per run: the stage run on TS-104 costs 15-22 (measured)
+allowed_models: [claude-haiku-5.5, claude-sonnet-5.5]
+
+harness_cmd: ["{python}", "-m", "harness"]
+
+# What the console lets you edit. Globs run against the unit worktree.
+# An entry that starts with "!" takes paths out again; it wins over every other entry. The last five entries
+# keep Python the harness (on your machine) could import from a saved file out of reach, so it never becomes editable.
+editable:
+  - "src/**"
+  - "tests/**"
+  - "fuzz/**"
+  - "tools/**"
+  - "!tools/*.py"
+  - "!tools/**/*.py"
+  - "!tools/*.sh"
+  - "!tools/**/*.sh"
+  - "!tools/*.ps1"
+  - "!tools/**/*.ps1"
+  - "PROTOCOL.md"
+  - "AGENTS.md"
+  - "tickets/**"
+  - "docs/usage-guide.md"
+  - ".github/agents/**"
+  - ".github/skills/**/*.md"
+  - ".github/instructions/**"
+  - ".github/copilot-instructions.md"
+  - ".github/hooks/*.json"
+  - "harness/harness.yaml"
+  - "harness/gates.yaml"
+  - "harness/workflows/**/*.yaml"
+  - "harness/workflows/**/*.yml"
+  - "harness/prompts/**/*.md"
+  - "!harness/**/*.py"
+  - "!**/__init__.*"
+  - "!**/*.pth"
+  - "!**/sitecustomize.py"
+  - "!**/usercustomize.py"
+
+# Harness structure a run may take from another unit.
+overlay:
+  - "AGENTS.md"
+  - ".github/agents/**"
+  - ".github/skills/**"
+  - ".github/instructions/**"
+  - ".github/copilot-instructions.md"
+  - ".github/hooks/*.json"
+  - "harness/harness.yaml"
+  - "harness/gates.yaml"
+  - "harness/workflows/**"
+  - "harness/prompts/**"

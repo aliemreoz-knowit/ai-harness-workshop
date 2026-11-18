@@ -1,0 +1,327 @@
+/* Admin view (views/admin.js): the room (units), the runs, the eval batch, warm caches and the doctor. Tokens and the
+   shared components (.page, .section, .table-box, .table, .badge, .meter, dialog) are style.css's; the view loads this
+   file itself. Under 720 px each unit of the units table is a card of its own. */
+
+.admin {
+  max-width: 1200px;
+}
+
+.adm-room {
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.adm-hint {
+  margin: 8px 0 0;
+}
+
+.adm-actions {
+  margin-top: 12px;
+}
+
+/* --- the units ----------------------------------------------------------------------------------------------------- */
+
+.adm-units th,
+.adm-units td {
+  white-space: nowrap;
+}
+
+.adm-units tr.busy {
+  opacity: 0.6;
+}
+
+.adm-unit {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.adm-units .adm-name {
+  width: 140px;
+}
+
+.adm-id {
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.adm-money {
+  min-width: 170px;
+  font-variant-numeric: tabular-nums;
+}
+
+.adm-money-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.adm-credits.out {
+  color: var(--fail);
+  font-weight: 500;
+}
+
+.adm-steps {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.adm-meter {
+  margin-top: 6px;
+}
+
+.adm-run {
+  display: flex;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.adm-runs th:nth-child(5) {
+  text-align: right;
+}
+
+.adm-status.busy {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.adm-status.ok {
+  color: var(--pass);
+}
+
+.adm-status.warn {
+  color: var(--warn);
+}
+
+.adm-status.bad {
+  color: var(--fail);
+}
+
+.adm-units td.adm-state-cell {
+  white-space: normal;
+}
+
+.adm-state {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+}
+
+.adm-lock-run {
+  display: inline-block;
+  max-width: 14ch;
+  overflow: hidden;
+  color: var(--ink-2);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+.adm-pair {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* --- the runs ------------------------------------------------------------------------------------------------------ */
+
+.adm-runs th,
+.adm-runs td {
+  white-space: nowrap;
+}
+
+.adm-runs td.adm-stop {
+  width: 1%;
+  text-align: right;
+}
+
+/* --- the eval batch and the doctor ---------------------------------------------------------------------------------- */
+
+.adm-line {
+  margin: 0 0 8px;
+}
+
+.adm-line.running,
+.adm-line.ok {
+  color: var(--accent);
+}
+
+.adm-line.stopped,
+.adm-line.warn {
+  color: var(--warn);
+}
+
+.adm-line.bad {
+  color: var(--fail);
+}
+
+.adm-progress {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  height: 8px;
+  margin-bottom: 8px;
+  accent-color: var(--accent);
+}
+
+.adm-checks {
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-box);
+  background: var(--surface);
+  list-style: none;
+}
+
+.adm-checks:empty {
+  display: none;
+}
+
+.adm-check {
+  display: grid;
+  grid-template-columns: 52px 140px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 2px 12px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+}
+
+.adm-check:first-child {
+  border-top: 0;
+}
+
+.adm-check .badge {
+  justify-content: center;
+  font-family: var(--mono);
+}
+
+.adm-check-name {
+  font-weight: 500;
+}
+
+.adm-check-detail {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.adm-fix {
+  grid-column: 3;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+/* --- the dialogs ----------------------------------------------------------------------------------------------------- */
+
+.adm-dialog {
+  width: min(440px, calc(100vw - 32px));
+}
+
+.adm-dialog h2 {
+  overflow-wrap: anywhere;
+}
+
+.adm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.adm-newcode {
+  margin: 8px 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--sunken);
+  font-family: var(--mono);
+  font-size: 28px;
+  line-height: 36px;
+  letter-spacing: 0.2em;
+  text-align: center;
+  user-select: all;
+}
+
+/* --- a phone: every unit a card, its cells label: value -------------------------------------------------------------- */
+
+@media (max-width: 719px) {
+  .adm-units-box {
+    overflow: visible;
+    border: 0;
+    background: none;
+  }
+
+  .adm-units,
+  .adm-units tbody,
+  .adm-units tr,
+  .adm-units th,
+  .adm-units td {
+    display: block;
+  }
+
+  .adm-units thead {
+    display: none;
+  }
+
+  .adm-units tr {
+    margin-bottom: 12px;
+    padding: 4px 12px 8px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-box);
+    background: var(--surface);
+  }
+
+  .adm-units th,
+  .adm-units td,
+  .adm-units tbody tr:last-child td {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+    white-space: normal;
+  }
+
+  .adm-units tr > :last-child,
+  .adm-units tbody tr:last-child > :last-child {
+    border-bottom: 0;
+  }
+
+  .adm-units td {
+    display: grid;
+    grid-template-columns: 5.5em minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+  }
+
+  .adm-units td::before {
+    content: attr(data-label);
+    color: var(--ink-2);
+    font-size: 12px;
+  }
+
+  .adm-units td > :not(.adm-pair):not(div) {
+    justify-self: start;
+  }
+
+  .adm-units .adm-name {
+    width: 100%;
+  }
+
+  .adm-money {
+    min-width: 0;
+  }
+
+  .adm-pair {
+    flex-wrap: wrap;
+  }
+
+  .adm-check {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+
+  .adm-check-detail,
+  .adm-fix {
+    grid-column: 1 / -1;
+  }
+}

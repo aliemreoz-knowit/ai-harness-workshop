@@ -1,0 +1,16 @@
+$ git apply "$WORKSHOP/patches/injected-change.patch" && git diff --stat && python -m harness gates compliance; python -m harness gates diff-policy
+ src/malloc_guard.c | 1 -
+ src/net/daemon.c   | 2 ++
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+GATES FAIL (compliance:FAIL)
+compliance diff rules: 1 compliance finding(s)
+- compliance src/net/daemon.c:59 [forbidden-call:system] system() is not allowed in src/net/daemon.c
+    >59 |     (void)system("id");
+(host (Windows), 80 ms)
+GATES FAIL (diff-policy:FAIL)
+diff-policy protected paths: protected: src/malloc_guard.c; new system call(s)
+- diff-policy src/malloc_guard.c [protected-path] src/malloc_guard.c is a protected path; revert this change
+- diff-policy src/net/daemon.c [process-call] new process creation / code loading: (void)system("id");
+(host (Windows), 2034 ms)
+
+[exit 1]

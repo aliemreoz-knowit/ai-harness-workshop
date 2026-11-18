@@ -1,0 +1,6 @@
+.git
+build
+build-*
+.harness
+third_party
+tests/data

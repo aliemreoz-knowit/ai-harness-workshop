@@ -1,0 +1,71 @@
+{
+  "_comment": "Recorded-shape GitHub REST responses for acme/tinystream (trimmed to the fields the bridge reads). once:true sequences a URL the bridge reads twice.",
+  "interactions": [
+    {"method": "GET", "url": "/repos/acme/tinystream", "status": 200,
+     "body": {"full_name": "acme/tinystream", "default_branch": "main", "owner": {"login": "acme", "type": "Organization"},
+              "permissions": {"admin": false, "push": true, "pull": true}}},
+    {"method": "GET", "url": "/repos/acme/tinystream/labels/*", "status": 200,
+     "body": {"name": "label", "color": "5319e7"}},
+
+    {"method": "GET", "url": "/repos/acme/tinystream/issues?labels=hil-ready&state=open&per_page=100&page=1", "status": 200,
+     "body": [
+       {"number": 31, "title": "GH-9: viewer recovers after a cable pull", "html_url": "https://github.com/acme/tinystream/pull/31",
+        "labels": [{"name": "hil-ready"}, {"name": "agent"}], "pull_request": {"url": "https://api.github.com/repos/acme/tinystream/pulls/31"}}
+     ]},
+    {"method": "GET", "url": "/repos/acme/tinystream/pulls/31", "status": 200,
+     "body": {"number": 31, "state": "open", "title": "GH-9: viewer recovers after a cable pull",
+              "html_url": "https://github.com/acme/tinystream/pull/31",
+              "head": {"ref": "agent/gh-9-c0de", "sha": "1a2b3c4d5e6f708192a3b4c5d6e7f80912345678",
+                       "repo": {"full_name": "acme/tinystream"}},
+              "base": {"ref": "main"}}},
+    {"method": "GET", "url": "/repos/acme/tinystream/issues/31/comments?per_page=100&page=1", "status": 200, "body": []},
+    {"method": "GET", "url": "/repos/acme/tinystream/issues/31/events?per_page=100&page=1", "status": 200,
+     "body": [{"event": "labeled", "label": {"name": "hil-ready"}, "actor": {"login": "team-blue"}}]},
+
+    {"method": "GET", "url": "/repos/acme/tinystream/issues?labels=agent%3Afix&state=open&per_page=100&page=1", "status": 200,
+     "body": [
+       {"number": 12, "title": "Board shows a stale frame counter after a daemon restart",
+        "html_url": "https://github.com/acme/tinystream/issues/12", "user": {"login": "team-red"},
+        "labels": [{"name": "agent:fix"}, {"name": "bug"}],
+        "body": "## Description\n\nAfter `systemctl restart tinystreamd` the board keeps the old frame counter.\n\n## Steps to reproduce\n\n1. Start a viewer\n2. Restart the daemon\n\n## Expected\n\nThe counter starts again from 0."},
+       {"number": 30, "title": "a PR carrying the label by mistake", "labels": [{"name": "agent:fix"}],
+        "pull_request": {"url": "https://api.github.com/repos/acme/tinystream/pulls/30"}}
+     ]},
+    {"method": "GET", "url": "/repos/acme/tinystream/issues/12", "status": 200,
+     "body": {"number": 12, "title": "Board shows a stale frame counter after a daemon restart",
+              "html_url": "https://github.com/acme/tinystream/issues/12", "labels": [{"name": "agent:fix"}, {"name": "bug"}],
+              "body": "## Description\n\nAfter `systemctl restart tinystreamd` the board keeps the old frame counter."}},
+    {"method": "GET", "url": "/repos/acme/tinystream/issues/12/events?per_page=100&page=1", "status": 200,
+     "body": [
+       {"event": "labeled", "label": {"name": "bug"}, "actor": {"login": "someone"}},
+       {"event": "labeled", "label": {"name": "agent:fix"}, "actor": {"login": "team-red"}}
+     ]},
+    {"method": "GET", "url": "/repos/acme/tinystream/issues/12/comments?per_page=100&page=1", "status": 200, "once": true, "body": []},
+    {"method": "GET", "url": "/repos/acme/tinystream/issues/12/comments?per_page=100&page=1", "status": 200,
+     "body": [
+       {"id": 501, "user": {"login": "bridge-bot"}, "body": "<!-- tinystream-bridge:issue -->\n### Agent run: RUNNING\n\n(started)"}
+     ]},
+    {"method": "GET", "url": "/repos/acme/tinystream/pulls?head=acme%3Aagent%2Fgh-12-ab12&state=open", "status": 200, "body": []},
+    {"method": "GET", "url": "/repos/acme/tinystream/pulls?head=acme%3Aagent%2Fproj-7-ab12&state=open", "status": 200, "body": []},
+    {"method": "GET", "url": "/repos/acme/tinystream/issues/40/comments?per_page=100&page=1", "status": 200, "body": []},
+
+    {"method": "DELETE", "url": "/repos/acme/tinystream/issues/12/labels/agent%3Afix", "status": 200, "body": []},
+    {"method": "DELETE", "url": "/repos/acme/tinystream/issues/12/labels/agent%3Arunning", "status": 200, "body": []},
+    {"method": "DELETE", "url": "/repos/acme/tinystream/issues/12/labels/*", "status": 404, "body": {"message": "Label does not exist"}},
+    {"method": "POST", "url": "/repos/acme/tinystream/issues/12/labels", "status": 200, "body": [{"name": "agent:running"}]},
+    {"method": "POST", "url": "/repos/acme/tinystream/issues/12/comments", "status": 201,
+     "body": {"id": 501, "html_url": "https://github.com/acme/tinystream/issues/12#issuecomment-501"}},
+    {"method": "PATCH", "url": "/repos/acme/tinystream/issues/comments/501", "status": 200,
+     "body": {"id": 501, "html_url": "https://github.com/acme/tinystream/issues/12#issuecomment-501"}},
+    {"method": "POST", "url": "/repos/acme/tinystream/pulls", "status": 201,
+     "body": {"number": 40, "html_url": "https://github.com/acme/tinystream/pull/40", "state": "open",
+              "head": {"ref": "agent/gh-12-ab12"}}},
+    {"method": "POST", "url": "/repos/acme/tinystream/issues/40/labels", "status": 200, "body": [{"name": "agent"}]},
+    {"method": "POST", "url": "/repos/acme/tinystream/issues/40/comments", "status": 201,
+     "body": {"id": 601, "html_url": "https://github.com/acme/tinystream/pull/40#issuecomment-601"}},
+    {"method": "POST", "url": "/repos/acme/tinystream/check-runs", "status": 403,
+     "body": {"message": "Resource not accessible by personal access token"}},
+    {"method": "POST", "url": "/repos/acme/tinystream/statuses/*", "status": 201, "body": {"id": 7001, "state": "success"}},
+    {"method": "POST", "url": "/repos/acme/tinystream/issues/31/comments", "status": 201, "body": {"id": 701}}
+  ]
+}

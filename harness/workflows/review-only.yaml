@@ -1,0 +1,23 @@
+# review-only -- review the current working-tree diff (for example another
+# unit's branch) against the ticket. Read-only: no edits, no commit.
+name: review-only
+description: Gate the current diff, then a read-only reviewer writes review.md.
+inputs: [ticket]
+
+steps:
+  - id: ticket
+    kind: ticket
+    approval: auto
+
+  - id: gates
+    kind: gates
+    gates: fast
+    # a red ladder is reported to the reviewer instead of stopping the run
+    on_fail: continue
+
+  - id: review
+    kind: review
+    role: reviewer
+    prompt: review
+    artifact: review.md
+    approval: auto

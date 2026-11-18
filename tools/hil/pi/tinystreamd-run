@@ -1,0 +1,35 @@
+#!/bin/sh
+# tinystreamd-run -- ExecStart of tinystreamd.service on the HIL Pi.
+# Reads /etc/default/tinystreamd (through the unit's EnvironmentFile):
+#   TSD_SOURCE   file | camera | synth            (default camera)
+#   TSD_CLIP     raw 320x240 gray8 clip for the file source
+#   TSD_ARGS     extra daemon arguments (--seq-start, ports, ...)
+#   RPICAM_ARGS  rpicam-vid arguments for the camera source
+set -u
+BIN=/usr/local/bin/tinystreamd
+SOURCE="${TSD_SOURCE:-camera}"
+CLIP="${TSD_CLIP:-/opt/tinystream/poster_30f.y8}"
+ARGS="${TSD_ARGS:-}"
+RPICAM="${RPICAM_ARGS:--t 0 -n --codec yuv420 --width 320 --height 240 --framerate 30 -o -}"
+
+case "$SOURCE" in
+    file)
+        # shellcheck disable=SC2086 # ARGS is a word list on purpose
+        exec "$BIN" --source "file:$CLIP" $ARGS
+        ;;
+    synth)
+        # shellcheck disable=SC2086
+        exec "$BIN" --source synth $ARGS
+        ;;
+    camera)
+        # Y plane of 320x240 YUV420 frames on stdin. When the pipe ends (camera
+        # gone) the daemon exits and systemd restarts both after RestartSec.
+        # shellcheck disable=SC2086
+        rpicam-vid $RPICAM | "$BIN" --source pipe $ARGS
+        exit $?
+        ;;
+    *)
+        echo "tinystreamd-run: unknown TSD_SOURCE '$SOURCE' (file | camera | synth)" >&2
+        exit 2
+        ;;
+esac

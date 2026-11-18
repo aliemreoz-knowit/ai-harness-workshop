@@ -1,0 +1,36 @@
+# Protected paths of the tinystream tree.
+#
+# Read by the preToolUse guardrail hook (.github/hooks/guardrails.json: agents
+# may not edit these, nor write to them from a shell) and by the diff-policy
+# gate (scripts/check.sh diff-policy: a change that touches one of them FAILs).
+#
+# Format: one repo-relative path or glob per line. A trailing "/" protects the
+# whole directory. "!" marks an exception that stays editable.
+# A facilitator can lift the protection for one approved run with the
+# environment variable TS_ALLOW_PROTECTED (space separated globs, e.g.
+# TS_ALLOW_PROTECTED="src/pool/**"); agents never set it themselves.
+
+# frozen public API (hidden evaluation tests compile against it)
+include/
+# static storage and the allocation guard of the daemon
+src/pool/
+src/malloc_guard.c
+# harness configuration, orchestrator and gate scripts
+.github/
+harness/
+scripts/
+AGENTS.md
+LICENSE
+# build system and toolchain
+CMakeLists.txt
+CMakePresets.json
+cmake/
+.devcontainer/
+third_party/
+# repository metadata
+.git/
+.gitattributes
+.gitignore
+
+# registering a new test is part of adding it
+!scripts/test_manifest.txt

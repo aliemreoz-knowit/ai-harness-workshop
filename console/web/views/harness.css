@@ -1,0 +1,784 @@
+/* The Harness view (views/harness.js): the page head with Validate, the validation result, the weakened-guardrail note,
+   the tabs and the cards of each tab. Tokens and shared components are style.css's. */
+
+.harness {
+  max-width: 1560px;
+  padding: 24px 32px 48px;
+}
+
+/* --- the head: title, what the page is for, the config line; Refresh and Validate --------------------------------- */
+
+.hx-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px 24px;
+  margin-bottom: 16px;
+}
+
+.hx-head-text {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.hx-head h1 {
+  margin: 0;
+}
+
+.hx-meta {
+  margin: 4px 0 0;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.hx-meta code {
+  font-size: 12px;
+}
+
+.hx-head-actions {
+  display: flex;
+  flex: none;
+  gap: 8px;
+}
+
+/* --- the validation result and the weakened-guardrail note: a box whose whole edge (and tint) is its state --------- */
+
+.hx-result,
+.hx-weak,
+.hx-weak-note {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-box);
+  background: var(--surface);
+}
+
+.hx-result.pass {
+  border-color: var(--pass-line);
+}
+
+.hx-result.fail {
+  border-color: var(--fail-line);
+  background: var(--fail-weak);
+}
+
+.hx-result.warn,
+.hx-weak,
+.hx-weak-note {
+  border-color: var(--warn-line);
+  background: var(--warn-weak);
+}
+
+.hx-result.running {
+  border-color: var(--accent-line);
+}
+
+.hx-result-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.hx-result-line {
+  font-weight: 500;
+}
+
+.hx-checks {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hx-checks > li + li {
+  margin-top: 4px;
+}
+
+.hx-checks strong {
+  font-weight: 500;
+}
+
+.hx-checks > li.pass > strong {
+  color: var(--pass);
+}
+
+.hx-checks > li.fail > strong {
+  color: var(--fail);
+}
+
+.hx-problems {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  overflow-wrap: anywhere;
+}
+
+.hx-output {
+  margin-top: 8px;
+}
+
+.hx-output summary {
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.hx-output summary:hover {
+  color: var(--ink);
+}
+
+.hx-output .codeblock {
+  max-height: 240px;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.hx-weak-head {
+  margin: 0 0 4px;
+}
+
+.hx-weak-head strong {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.hx-weak-note > p {
+  margin: 0 0 4px;
+}
+
+.hx-weak-list {
+  margin: 0 0 8px;
+  padding-left: 18px;
+}
+
+.hx-weak .hx-weak-list,
+.hx-weak-note .hx-weak-list {
+  margin: 0;
+}
+
+.hx-weak-list li {
+  margin: 2px 0;
+  overflow-wrap: anywhere;
+}
+
+/* --- the tabs: one row; on a narrow screen it scrolls inside itself ------------------------------------------------ */
+
+/* a box that scrolls is positioned: the screen-reader-only text inside it stays inside it, not off the page */
+.hx-tabs {
+  position: relative;
+  flex-wrap: nowrap;
+  margin: 0 0 16px;
+  box-shadow: inset 0 -1px 0 var(--line); /* the line under the tabs; the one on show draws its underline over it */
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none; /* on a narrow screen the cut-off last tab says there is more; a swipe or Tab key scrolls */
+}
+
+.hx-tabs .tab {
+  flex: none;
+  padding: 8px 10px;
+}
+
+.hx-count {
+  margin-left: 6px;
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.hx-tab-weak {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: var(--warn);
+  vertical-align: middle;
+}
+
+.hx-intro {
+  max-width: var(--measure);
+  margin: 0 0 16px;
+  color: var(--ink-2);
+}
+
+/* --- cards ----------------------------------------------------------------------------------------------------------- */
+
+.hx-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.hx-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hx-stack > .hx-weak-note {
+  margin: 0;
+}
+
+.hx-card {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-box);
+  background: var(--surface);
+}
+
+.hx-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-bottom: 8px;
+}
+
+.hx-card-title {
+  min-width: 0;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+}
+
+.hx-card-title code {
+  font-size: 14px;
+}
+
+.hx-marks {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.hx-edit {
+  flex: none;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.hx-edit:hover {
+  text-decoration: underline;
+}
+
+.hx-soft,
+.hx-none {
+  color: var(--ink-2);
+}
+
+.hx-text {
+  margin: 0 0 8px;
+}
+
+.hx-path {
+  margin: 8px 0 0;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.hx-path code {
+  font-size: 12px;
+}
+
+.hx-error {
+  margin: 0 0 8px;
+  color: var(--fail);
+  overflow-wrap: anywhere;
+}
+
+.hx-empty {
+  padding: 8px 0;
+}
+
+.hx-facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 8px 16px;
+  margin: 0;
+}
+
+.hx-facts dt {
+  color: var(--ink-2);
+}
+
+.hx-facts dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* a hook's regression cases (cases.json), one column per outcome */
+.hx-cases {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.hx-cases-head {
+  margin: 0 0 10px;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.hx-cases-head strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.hx-cases-head code {
+  font-size: 12px;
+}
+
+.hx-cases-cols {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.hx-cases-col {
+  flex: 1 1 220px;
+  min-width: 0;
+  border-radius: 8px;
+  background: var(--sunken);
+}
+
+.hx-cases-col.is-deny {
+  flex-grow: 3; /* the long list: it gets the room for several columns */
+}
+
+.hx-cases-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.hx-cases-col.is-deny .hx-cases-title,
+.hx-cases-col.is-flagged .hx-cases-title {
+  color: var(--warn);
+}
+
+.hx-cases-col.is-none .hx-cases-title,
+.hx-cases-col.is-context .hx-cases-title {
+  color: var(--ink-2);
+}
+
+.hx-cases-count {
+  margin-left: auto;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
+.hx-cases-list {
+  margin: 0;
+  padding: 6px 10px 8px 26px;
+  columns: 200px;
+  column-gap: 28px;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.hx-cases-list li {
+  break-inside: avoid;
+}
+
+.hx-cases-list li::marker {
+  color: var(--ink-2);
+}
+
+/* a list of names as one line of code words: "view, grep, glob" */
+.hx-words {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hx-words li {
+  display: inline;
+}
+
+.hx-words li:not(:last-child)::after {
+  content: ", ";
+  color: var(--ink-2);
+}
+
+.hx-words code {
+  white-space: nowrap;
+}
+
+.hx-card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: 12px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-2);
+}
+
+.hx-command {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.hx-except {
+  margin: 8px 0 0;
+  color: var(--ink-2);
+}
+
+/* --- gates: the ladder with its profiles ----------------------------------------------------------------------------- */
+
+.hx-table-wrap {
+  position: relative;
+  overflow-x: auto;
+}
+
+.hx-ladder th,
+.hx-ladder td {
+  padding: 6px 8px;
+  vertical-align: middle;
+}
+
+.hx-ladder thead th {
+  vertical-align: bottom;
+}
+
+.hx-ladder .hx-prof {
+  text-align: center;
+}
+
+.hx-prof code {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.hx-prof-use {
+  display: block;
+  color: var(--accent);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.hx-gate {
+  min-width: 180px;
+}
+
+.hx-gate-id {
+  margin-right: 8px;
+  font-weight: 500; /* Plex Mono's heaviest shipped weight */
+}
+
+.hx-gate-fn {
+  display: block;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+
+.hx-gate-time {
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hx-ladder .hx-cell {
+  min-width: 44px;
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 12px;
+  text-align: center;
+}
+
+.hx-ladder .hx-cell.on {
+  background: var(--accent-weak);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.hx-ladder .hx-row-edit {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* one Edit per gate: quiet until the row is pointed at */
+.hx-row-edit .hx-edit {
+  color: var(--ink-2);
+}
+
+.hx-ladder tr:hover .hx-edit,
+.hx-row-edit .hx-edit:focus-visible {
+  color: var(--link);
+}
+
+.hx-uses {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hx-uses li + li {
+  margin-top: 4px;
+}
+
+/* --- workflows: the steps in order, the approval points marked ------------------------------------------------------- */
+
+.hx-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 24px;
+  margin: 0;
+  color: var(--ink-2);
+}
+
+.hx-approve {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.hx-person {
+  display: inline-flex;
+}
+
+.hx-back {
+  color: var(--ink);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.hx-approvals {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.hx-steps {
+  margin: 8px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+
+.hx-step {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto auto;
+  align-items: baseline;
+  gap: 2px 16px;
+  padding: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.hx-step.human {
+  background: var(--accent-weak);
+}
+
+.hx-step-n {
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 12px;
+  text-align: right;
+}
+
+.hx-step-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 12px;
+  min-width: 0;
+}
+
+.hx-step-id {
+  font-weight: 500; /* Plex Mono's heaviest shipped weight */
+}
+
+.hx-step-kind {
+  color: var(--ink-2);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.hx-step-flow {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* --- instructions: one row per file ----------------------------------------------------------------------------------- */
+
+.hx-rows {
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-box);
+  background: var(--surface);
+  list-style: none;
+}
+
+.hx-row {
+  display: flex;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px 16px;
+}
+
+.hx-row + .hx-row {
+  border-top: 1px solid var(--line);
+}
+
+.hx-row-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.hx-row-path {
+  overflow-wrap: anywhere;
+}
+
+.hx-narrow {
+  max-width: 760px;
+}
+
+/* --- the loop: one row per setting ------------------------------------------------------------------------------------ */
+
+.hx-settings {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hx-setting {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 4px 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.hx-setting:first-child {
+  padding-top: 4px;
+  border-top: 0;
+}
+
+.hx-setting:last-child {
+  padding-bottom: 0;
+}
+
+.hx-setting-value {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 24px;
+  overflow-wrap: anywhere;
+}
+
+.hx-setting-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.hx-setting-label {
+  font-weight: 500;
+}
+
+.hx-setting .hx-edit {
+  color: var(--ink-2);
+}
+
+.hx-setting:hover .hx-edit,
+.hx-setting .hx-edit:focus-visible {
+  color: var(--link);
+}
+
+.hx-setting-label code {
+  margin-left: 4px;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+/* --- narrow screens ------------------------------------------------------------------------------------------------- */
+
+@media (max-width: 639px) {
+  .harness {
+    padding: 16px 16px 40px;
+  }
+
+  .hx-head-actions {
+    width: 100%;
+  }
+
+  .hx-head-actions .btn.primary {
+    flex: 1;
+  }
+
+  .hx-card {
+    padding: 12px;
+  }
+
+  .hx-gate-time,
+  .hx-gate-fn {
+    display: none;
+  }
+
+  .hx-gate {
+    min-width: 132px;
+  }
+
+  .hx-ladder .hx-cell {
+    min-width: 32px;
+  }
+
+  .hx-ladder th,
+  .hx-ladder td {
+    padding: 6px 4px;
+  }
+
+  .hx-step {
+    grid-template-columns: 24px minmax(0, 1fr);
+    gap: 2px 8px;
+  }
+
+  .hx-step-flow,
+  .hx-step-approval {
+    grid-column: 2;
+    align-items: flex-start;
+  }
+
+  .hx-setting {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .hx-setting .hx-edit {
+    grid-column: 2;
+  }
+
+  .hx-row {
+    flex-wrap: wrap;
+  }
+}

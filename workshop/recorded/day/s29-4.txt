@@ -1,0 +1,8 @@
+$ python -m harness gates compliance
+GATES FAIL (compliance:FAIL)
+compliance diff rules: 1 compliance finding(s)
+- compliance src/rate/rate.c:34 [forbidden-call:malloc] malloc() is not allowed in src/rate/rate.c
+    >34 |     ts_demo_buf = malloc(16);
+(host (Windows), 79 ms)
+
+[exit 1]

@@ -1,0 +1,13 @@
+$ python -m harness eval --resume --experiment resume-demo-20261120 --tickets TS-104,TS-107,TS-110,TS-102 --only cheap --backend orchestrator-fake
+[eval] experiment resume-demo-20261120: 4 runs (1 variants x 4 tickets), 2 already done, 2 to run, parallel 1
+[eval]   1/2 FAIL cheap TS-110   r0  status=escalated credits=0.0 interventions=2 retries=3 1.3s
+[eval]   2/2 FAIL cheap TS-102   r0  status=escalated credits=0.0 interventions=2 retries=3 0.6s
+
+variant  runs      pass      95% CI    commit  credits interv retries   dur s gates review  label
+-------------------------------------------------------------------------------------------------
+cheap       4   0/4    0%     0-49%   0/4    0%     0.00    2.0     3.0       1   1.0      -  cheap harness (small model only, trimmed planner, diff-only reviewer)
+
+[eval] results: .console-data\units\unit-01\repo\results\resume-demo-20261120.jsonl
+[eval] board:   .console-data\units\unit-01\repo\results\results.json
+
+[exit 0]

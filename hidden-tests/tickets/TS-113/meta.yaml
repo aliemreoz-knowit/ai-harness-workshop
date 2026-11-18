@@ -1,0 +1,15 @@
+# What the eval code reads of this ticket: its ticket branch, the paths a change may touch and the
+# held-back tests. The tests themselves are in tests/.
+id: TS-113
+title: "Tear line runs down the camera picture, stream stops when the camera pauses"
+kind: bug
+eval: false
+ticket_branch: ticket/TS-113
+modules: [capture, pool]
+allowed_paths:
+  - src/capture/**
+  - src/pool/**
+  - tests/unit/**
+  - scripts/test_manifest.txt
+hidden_tests:
+  - tests/unit/test_capture_pipe.c

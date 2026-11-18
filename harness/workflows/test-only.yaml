@@ -1,0 +1,35 @@
+# test-only -- a test-gap ticket: the test-writer adds tests until the unit,
+# property and coverage gates pass; no production code is touched.
+name: test-only
+description: Close a test gap; only tests/ may change, coverage must pass.
+inputs: [ticket]
+
+steps:
+  - id: ticket
+    kind: ticket
+    approval: human
+
+  - id: tests
+    kind: agent_gated
+    role: test-writer
+    prompt: add-tests
+    gates: tests
+    require_test_change: always
+    on_exhausted: escalate
+    approval: auto
+
+  - id: review
+    kind: review
+    role: reviewer
+    prompt: review
+    artifact: review.md
+    on_reject: tests
+    approval: auto
+
+  - id: merge-approval
+    kind: approval
+    approval: human
+    message: Create the branch and commit the new tests?
+
+  - id: commit
+    kind: commit

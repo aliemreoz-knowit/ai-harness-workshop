@@ -1,0 +1,10 @@
+# tsnetem scenario for the HIL station / demo (tsnetem --scenario tools/tsnetem/scenarios/hil_demo.txt)
+# One step per line, cumulative: each line changes only the keys it names.
+# Check it with: tsnetem --check-scenario tools/tsnetem/scenarios/hil_demo.txt
+t=0s    clean
+t=5s    loss=5%                 # fps must stay >= 20, bitrate <= budget + 10 %
+t=15s   loss=0 burst=50         # burst of 50, daemon must not restart
+t=20s   blackout 2s             # cable pull, picture back within 1 s
+t=30s   reorder=10% hold=10ms   # reorder below the NACK delay: no NACKs, exact picture
+t=40s   reorder=0 flip=2% trunc=1%   # corrupt datagrams, nothing may crash
+t=50s   clean

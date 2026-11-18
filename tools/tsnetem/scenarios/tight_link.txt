@@ -1,0 +1,11 @@
+# tsnetem scenario for the projector demo: tight link under loss
+# (tsnetem --scenario tools/tsnetem/scenarios/tight_link.txt).
+# The viewer's budget must be at or below the link: start the daemon with
+# --kbps 1000 (or the viewer with tsrecv --kbps 1000). Loopback twin:
+# tests/loopback/test_lb_tight_link.c (same link, budget 1000 kbit/s).
+# One step per line, cumulative: each line changes only the keys it names.
+# Check it with: tsnetem --check-scenario tools/tsnetem/scenarios/tight_link.txt
+t=0s    clean throttle=1100kbps          # link = budget + 10 %
+t=5s    loss=5%                          # fps must stay >= 20, bitrate <= budget + 10 %
+t=35s   loss=0                           # back to a clean (still throttled) link
+t=45s   clean

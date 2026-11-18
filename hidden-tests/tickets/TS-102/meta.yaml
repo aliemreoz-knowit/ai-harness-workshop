@@ -1,0 +1,17 @@
+# What the eval code reads of this ticket: its ticket branch, the paths a change may touch and the
+# held-back tests. The tests themselves are in tests/.
+id: TS-102
+title: "Stripes and crashes on detailed scenes"
+kind: bug
+eval: true
+ticket_branch: ticket/TS-102
+modules: [net, codec, pool]
+allowed_paths:
+  - src/net/**
+  - src/codec/**
+  - src/pool/**
+  - tests/unit/**
+  - tests/loopback/**
+  - scripts/test_manifest.txt
+hidden_tests:
+  - tests/loopback/test_lb_detailed_scene_eval.c

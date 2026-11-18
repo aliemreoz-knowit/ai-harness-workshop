@@ -1,0 +1,83 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-${presetName}",
+      "cacheVariables": { "CMAKE_EXPORT_COMPILE_COMMANDS": "ON" }
+    },
+    {
+      "name": "host",
+      "inherits": "base",
+      "displayName": "host: gcc -O1 -g",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_C_FLAGS": "-O1 -g"
+      }
+    },
+    {
+      "name": "asan",
+      "inherits": "base",
+      "displayName": "asan: gcc ASan+UBSan, no recover, non-PIE (gcc 12 libasan vs vm.mmap_rnd_bits=32)",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_C_FLAGS": "-O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer",
+        "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=address,undefined -no-pie"
+      }
+    },
+    {
+      "name": "fuzz",
+      "inherits": "base",
+      "displayName": "fuzz: clang-14 libFuzzer + ASan (fuzz/ targets only)",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang-14",
+        "CMAKE_C_FLAGS": "-O1 -g -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer",
+        "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=address,undefined -no-pie",
+        "TS_BUILD_FUZZ": "ON",
+        "TS_FUZZ_ONLY": "ON"
+      }
+    },
+    {
+      "name": "pi",
+      "inherits": "base",
+      "displayName": "pi: aarch64-linux-gnu-gcc static, tests under qemu-aarch64-static",
+      "toolchainFile": "${sourceDir}/cmake/aarch64.cmake",
+      "cacheVariables": {
+        "CMAKE_C_FLAGS": "-O2 -g"
+      }
+    },
+    {
+      "name": "coverage",
+      "inherits": "base",
+      "displayName": "coverage: gcc --coverage -O0",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_C_FLAGS": "-O0 -g --coverage",
+        "CMAKE_EXE_LINKER_FLAGS": "--coverage",
+        "TS_COVERAGE": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "host",     "configurePreset": "host" },
+    { "name": "asan",     "configurePreset": "asan" },
+    { "name": "fuzz",     "configurePreset": "fuzz" },
+    { "name": "pi",       "configurePreset": "pi" },
+    { "name": "coverage", "configurePreset": "coverage" }
+  ],
+  "testPresets": [
+    {
+      "name": "base-test",
+      "hidden": true,
+      "output": { "outputOnFailure": true },
+      "execution": { "jobs": 8, "timeout": 300 }
+    },
+    { "name": "host",     "inherits": "base-test", "configurePreset": "host" },
+    { "name": "asan",     "inherits": "base-test", "configurePreset": "asan" },
+    { "name": "pi",       "inherits": "base-test", "configurePreset": "pi" },
+    { "name": "coverage", "inherits": "base-test", "configurePreset": "coverage" }
+  ]
+}

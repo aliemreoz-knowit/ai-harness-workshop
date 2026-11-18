@@ -1,0 +1,26 @@
+# single-agent -- section 1/2 baseline: one role, one session, the gates as the
+# only feedback. Compare with jira-to-pr on the leaderboard (variant gates).
+name: single-agent
+description: One agent fixes the ticket; the gate ladder is its only feedback.
+inputs: [ticket]
+
+steps:
+  - id: ticket
+    kind: ticket
+    approval: human
+
+  - id: solve
+    kind: agent_gated
+    role: solo
+    prompt: solo
+    gates: fast
+    on_exhausted: escalate
+    approval: auto
+
+  - id: merge-approval
+    kind: approval
+    approval: human
+    message: Create the branch and commit the change?
+
+  - id: commit
+    kind: commit

@@ -1,0 +1,23 @@
+# release-readiness -- demo only (section 5): run the whole ladder including the
+# fuzz smoke and coverage, let the reviewer write a release note, ask a human.
+name: release-readiness
+description: Full ladder plus a reviewer release note; a human approves the v1.0 candidate.
+inputs: []
+
+steps:
+  - id: ladder
+    kind: gates
+    gates: release
+    on_fail: escalate
+
+  - id: release-note
+    kind: agent
+    role: reviewer
+    prompt: release
+    artifact: release.md
+    approval: auto
+
+  - id: release-approval
+    kind: approval
+    approval: human
+    message: Approve this tree as the release candidate?

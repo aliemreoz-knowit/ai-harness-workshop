@@ -1,0 +1,148 @@
+$ python harness/level1_runner.py planner "Read AGENTS.md. List the three rules that matter most for a change in src/net. Do not edit anything." view 30
+{
+  "answer": "Based on AGENTS.md (already provided in context), the three rules that matter most for a change in `src/net`:\n\n1. **Network only through the `ts_io_t` vtable, with deterministic time and randomness.** No sockets, `time()`, `rand()` or `sleep()` in a module. Time arrives as `now_ms`, and randomness comes from the seeded xorshift32.\n\n2. **The wire format is closed, and `PROTOCOL.md` is the source of truth.** There are no new TLV or packet types and no layout changes. Code follows `PROTOCOL.md`, never the reverse. A wire change needs a `PROTOCOL_VERSION` bump and a human decision, so stop and propose it in the report.\n\n3. **No dynamic memory after init, and no process creation or code loading.** All storage is static. `malloc`, `calloc`, `realloc`, `free`, `strdup`, `fopen` and similar are forbidden in `src/`. `system`, `popen`, `exec*`, `fork`, `posix_spawn*` and `dlopen` are forbidden everywhere. The no-heap and diff-policy gates enforce this.\n\nRelated constraints:\n- Edit only `src/net/`, `tests/` and the test manifest.\n- Never edit `include/`.\n- Keep ticket ids out of the source tree.\n- Build and test only through the scripts.",
+  "tool_calls": 0,
+  "tool_failures": 0,
+  "usage": {
+    "totalPremiumRequestCost": 1,
+    "totalUserRequests": 1,
+    "totalNanoAiu": 3313040000,
+    "aiCreditsStatus": "complete",
+    "tokenDetails": {
+      "input": {
+        "tokenCount": 82
+      },
+      "cache_read": {
+        "tokenCount": 1939
+      },
+      "cache_write": {
+        "tokenCount": 11297
+      },
+      "output": {
+        "tokenCount": 453
+      }
+    },
+    "totalApiDurationMs": 3652,
+    "sessionStartTime": "2026-11-18T14:49:34.477Z",
+    "codeChanges": {
+      "linesAdded": 0,
+      "linesRemoved": 0,
+      "filesModifiedCount": 0,
+      "filesModified": []
+    },
+    "modelMetrics": {
+      "claude-sonnet-5.5": {
+        "requests": {
+          "count": 1,
+          "cost": 1
+        },
+        "usage": {
+          "inputTokens": 13318,
+          "outputTokens": 453,
+          "cacheReadTokens": 1939,
+          "cacheWriteTokens": 11297,
+          "reasoningTokens": 0
+        },
+        "cacheExpiresAt": "2026-11-18T14:54:37.474Z",
+        "totalNanoAiu": 3313040000,
+        "aiCreditsStatus": "complete",
+        "tokenDetails": {
+          "input": {
+            "tokenCount": 82
+          },
+          "cache_read": {
+            "tokenCount": 1939
+          },
+          "cache_write": {
+            "tokenCount": 11297
+          },
+          "output": {
+            "tokenCount": 453
+          }
+        }
+      }
+    },
+    "agentMetrics": {
+      "main": {
+        "totalApiDurationMs": 3652,
+        "totalNanoAiu": 3313040000,
+        "modelMetrics": {
+          "claude-sonnet-5.5": {
+            "requests": {
+              "count": 1,
+              "cost": 1
+            },
+            "usage": {
+              "inputTokens": 13318,
+              "outputTokens": 453,
+              "cacheReadTokens": 1939,
+              "cacheWriteTokens": 11297,
+              "reasoningTokens": 0
+            },
+            "totalNanoAiu": 3313040000,
+            "tokenDetails": {
+              "input": {
+                "tokenCount": 82
+              },
+              "cache_read": {
+                "tokenCount": 1939
+              },
+              "cache_write": {
+                "tokenCount": 11297
+              },
+              "output": {
+                "tokenCount": 453
+              }
+            }
+          }
+        }
+      }
+    },
+    "providerModelMetrics": [
+      {
+        "provider": {
+          "id": "copilot",
+          "label": "GitHub Copilot",
+          "kind": "copilot"
+        },
+        "modelId": "claude-sonnet-5.5",
+        "metrics": {
+          "requests": {
+            "count": 1,
+            "cost": 1
+          },
+          "usage": {
+            "inputTokens": 13318,
+            "outputTokens": 453,
+            "cacheReadTokens": 1939,
+            "cacheWriteTokens": 11297,
+            "reasoningTokens": 0
+          },
+          "totalNanoAiu": 3313040000,
+          "aiCreditsStatus": "complete",
+          "tokenDetails": {
+            "input": {
+              "tokenCount": 82
+            },
+            "cache_read": {
+              "tokenCount": 1939
+            },
+            "cache_write": {
+              "tokenCount": 11297
+            },
+            "output": {
+              "tokenCount": 453
+            }
+          }
+        },
+        "modelDisplayName": "Claude Sonnet 5.5"
+      }
+    ],
+    "currentModel": "claude-sonnet-5.5",
+    "lastCallInputTokens": 13318,
+    "lastCallOutputTokens": 453
+  },
+  "exit_code": 0
+}
+
+[exit 0]

@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eval leaderboard</title>
+<!--
+  Eval leaderboard: one static file, no external dependencies.
+  Reads results.json written by `python -m harness eval` / `python -m harness leaderboard`.
+
+    python -m http.server 8000            (from the repository root)
+    http://localhost:8000/tools/board/leaderboard.html
+
+  Query parameters:
+    src=<url>        results file (default ../../results/results.json, i.e. <repo>/results/results.json;
+                     keep result files out of tools/: they carry ticket ids, which misra rejects there)
+    refresh=<s>      poll interval in seconds (default 10, 0 = off)
+    theme=dark|light override the system colour scheme
+-->
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --ink: #17191c; --muted: #646b75; --line: #e2e5ea;
+  --pass: #1f8a5b; --pass-soft: #d5efe2; --cost: #b7791f; --neutral: #5a6b85; --bad: #c0392b;
+  --bar-bg: #eef0f3; --head: #fafbfc;
+  --mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1113; --panel: #171a1d; --ink: #e8eaed; --muted: #8b939e; --line: #2a2f35;
+    --pass: #3ccf8e; --pass-soft: #173a2a; --cost: #e3a948; --neutral: #8aa0c2; --bad: #ff6b5b;
+    --bar-bg: #23272c; --head: #1b1f23;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1113; --panel: #171a1d; --ink: #e8eaed; --muted: #8b939e; --line: #2a2f35;
+  --pass: #3ccf8e; --pass-soft: #173a2a; --cost: #e3a948; --neutral: #8aa0c2; --bad: #ff6b5b;
+  --bar-bg: #23272c; --head: #1b1f23;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.4 var(--sans); }
+main { max-width: 1280px; margin: 0 auto; padding: 20px 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 20px; margin-bottom: 14px; }
+h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+h2 { font-size: 15px; margin: 28px 0 8px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.meta { color: var(--muted); font-size: 13px; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 6px 0 14px; font-size: 13px; }
+select, button { font: inherit; font-size: 13px; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; }
+button { cursor: pointer; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 900px; }
+th, td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+tr:last-child td { border-bottom: 0; }
+th { background: var(--head); font-size: 12px; color: var(--muted); font-weight: 600; white-space: nowrap; cursor: pointer; user-select: none; }
+th.sorted::after { content: " \25BE"; }
+th.sorted.asc::after { content: " \25B4"; }
+td.num, th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.rank { color: var(--muted); font-family: var(--mono); width: 28px; }
+.vname { font-weight: 700; font-family: var(--mono); }
+#board td:nth-child(2) { min-width: 220px; }
+.vlabel { color: var(--muted); font-size: 12.5px; }
+.cell { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; min-width: 130px; }
+.cell .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13.5px; text-align: right; min-width: 54px; }
+.bar { position: relative; height: 8px; background: var(--bar-bg); border-radius: 4px; overflow: hidden; }
+.bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--neutral); }
+.bar.pass i { background: var(--pass); }
+.bar.cost i { background: var(--cost); }
+.bar .ci { position: absolute; top: 3px; height: 2px; background: var(--ink); opacity: .45; }
+.sub { display: block; color: var(--muted); font-size: 11.5px; font-family: var(--mono); }
+.bad { color: var(--bad); }
+.matrix td { text-align: center; font-family: var(--mono); font-size: 13px; padding: 7px 6px; }
+.matrix td.rowhead { text-align: left; }
+.chip { display: inline-block; min-width: 44px; padding: 3px 6px; border-radius: 5px; }
+.empty, .error { padding: 28px 20px; color: var(--muted); }
+.error { color: var(--bad); }
+code { font-family: var(--mono); font-size: 12.5px; background: var(--bar-bg); padding: 1px 5px; border-radius: 4px; }
+.legend { color: var(--muted); font-size: 12px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Eval leaderboard</h1>
+    <span class="meta" id="meta">loading&hellip;</span>
+  </header>
+  <div class="controls">
+    <label>Experiment <select id="exp"><option value="">all</option></select></label>
+    <label>Ticket <select id="ticket"><option value="">all</option></select></label>
+    <button id="reload" type="button">Reload</button>
+    <span class="meta" id="status"></span>
+  </div>
+  <div class="panel" id="board"><div class="empty">loading&hellip;</div></div>
+  <div class="legend">Pass = hidden tests green on the ticket's branch. Commit = the workflow ended with a commit (every gate, review and approval step of the variant passed). Pass without commit: the fix works but the harness stopped (escalation, budget). Whisker = 95% Wilson interval. Credits, interventions (counted approvals + escalations), retries and duration are means per run. Click a column to sort.</div>
+  <h2>Pass (commit) by ticket</h2>
+  <div class="panel" id="matrix"><div class="empty">&ndash;</div></div>
+</main>
+<script>
+(function () {
+  "use strict";
+  var params = new URLSearchParams(location.search);
+  var theme = params.get("theme");
+  if (theme === "dark" || theme === "light") { document.documentElement.setAttribute("data-theme", theme); }
+  var SOURCES = [params.get("src") || "../../results/results.json"];
+  var REFRESH = params.has("refresh") ? Number(params.get("refresh")) : 10;
+  var state = { data: null, src: null, sort: { key: "pass_rate", asc: false } };
+  var $ = function (id) { return document.getElementById(id); };
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function mean(xs) {
+    var v = xs.filter(function (x) { return typeof x === "number" && isFinite(x); });
+    return v.length ? v.reduce(function (a, b) { return a + b; }, 0) / v.length : null;
+  }
+  function wilson(k, n) {
+    if (!n) { return [0, 0]; }
+    var z = 1.96, p = k / n, den = 1 + z * z / n;
+    var c = (p + z * z / (2 * n)) / den;
+    var h = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / den;
+    return [Math.max(0, c - h), Math.min(1, c + h)];
+  }
+  function vorder(name) {
+    var m = /^(.*?)(\d+)$/.exec(name || "");
+    return m ? [m[1], Number(m[2])] : [name, 0];
+  }
+  function cmpVariant(a, b) {
+    var x = vorder(a), y = vorder(b);
+    return x[0] < y[0] ? -1 : x[0] > y[0] ? 1 : x[1] - y[1];
+  }
+  function fmtDur(s) {
+    if (s == null) { return "–"; }
+    s = Math.round(s);
+    var m = Math.floor(s / 60), r = s % 60;
+    return m >= 60 ? Math.floor(m / 60) + "h" + String(m % 60).padStart(2, "0") : m + ":" + String(r).padStart(2, "0");
+  }
+  function fmt(v, nd) { return v == null ? "–" : v.toFixed(nd); }
+
+  function committed(r) {
+    if (r.workflow_committed != null) { return !!r.workflow_committed; }
+    return (r.commits || 0) > 0;
+  }
+
+  function aggregate(runs, labels) {
+    var by = {};
+    runs.forEach(function (r) {
+      if (r.run_status !== "done") { return; }
+      (by[r.variant] = by[r.variant] || []).push(r);
+    });
+    var errs = {};
+    runs.forEach(function (r) { if (r.error || r.run_status !== "done") { errs[r.variant] = (errs[r.variant] || 0) + 1; } });
+    return Object.keys(by).map(function (v) {
+      var rs = by[v], n = rs.length;
+      var k = rs.filter(function (r) { return r.success; }).length;
+      var c = rs.filter(committed).length;
+      var credits = rs.map(function (r) { return r.ai_credits; });
+      var total = credits.reduce(function (a, b) { return a + (typeof b === "number" ? b : 0); }, 0);
+      var lab = labels[v] || {};
+      return {
+        variant: v, label: lab.label || "", tests: lab.tests || "", runs: n, passes: k,
+        pass_rate: n ? k / n : 0, ci: wilson(k, n), commits: c, commit_rate: n ? c / n : 0,
+        credits: mean(credits), credits_per_pass: k ? total / k : null,
+        interventions: mean(rs.map(function (r) { return r.interventions; })),
+        retries: mean(rs.map(function (r) { return r.retries; })),
+        duration: mean(rs.map(function (r) { return r.duration_s; })),
+        gates: mean(rs.map(function (r) { return r.gate_violations; })),
+        review: mean(rs.map(function (r) { return r.reviewer_score; })),
+        errors: errs[v] || 0
+      };
+    });
+  }
+
+  var COLS = [
+    { key: "pass_rate", label: "Pass rate", kind: "pass" },
+    { key: "commit_rate", label: "Commit rate", kind: "commit" },
+    { key: "credits", label: "Credits / run", kind: "cost", nd: 2 },
+    { key: "credits_per_pass", label: "Credits / pass", kind: "num", nd: 2 },
+    { key: "interventions", label: "Interventions", kind: "bar", nd: 1 },
+    { key: "retries", label: "Retries", kind: "bar", nd: 1 },
+    { key: "duration", label: "Duration", kind: "dur" },
+    { key: "gates", label: "Gate viol.", kind: "num", nd: 1 },
+    { key: "review", label: "Review", kind: "num", nd: 1 },
+    { key: "errors", label: "Errors", kind: "num", nd: 0 }
+  ];
+
+  function sortRows(rows) {
+    var s = state.sort;
+    rows.sort(function (a, b) {
+      var x = a[s.key], y = b[s.key];
+      if (s.key === "variant") { return (s.asc ? 1 : -1) * cmpVariant(x, y); }
+      if (x == null && y == null) { return cmpVariant(a.variant, b.variant); }
+      if (x == null) { return 1; }
+      if (y == null) { return -1; }
+      if (x !== y) { return s.asc ? x - y : y - x; }
+      if (s.key === "pass_rate" && a.credits !== b.credits) { return (a.credits || 0) - (b.credits || 0); }
+      return cmpVariant(a.variant, b.variant);
+    });
+    return rows;
+  }
+
+  function barCell(v, max, cls, text, ci) {
+    var w = max > 0 && v != null ? Math.max(2, 100 * v / max) : 0;
+    var whisker = ci ? '<span class="ci" style="left:' + (100 * ci[0]).toFixed(1) + '%;width:' +
+      Math.max(0.5, 100 * (ci[1] - ci[0])).toFixed(1) + '%"></span>' : "";
+    return '<div class="cell"><div class="bar ' + cls + '"><i style="width:' + w.toFixed(1) + '%"></i>' + whisker +
+      '</div><span class="v">' + text + "</span></div>";
+  }
+
+  function filtered() {
+    var d = state.data, exp = $("exp").value, t = $("ticket").value;
+    return (d.runs || []).filter(function (r) { return (!exp || r.experiment === exp) && (!t || r.ticket === t); });
+  }
+
+  function labelsOf(d) {
+    var labels = {};
+    (d.variants || []).forEach(function (v) { labels[v.variant] = { label: v.label, tests: v.tests }; });
+    return labels;
+  }
+
+  function renderTable() {
+    var d = state.data;
+    var rows = sortRows(aggregate(filtered(), labelsOf(d)));
+    if (!rows.length) {
+      $("board").innerHTML = '<div class="empty">No finished runs yet. Start one with <code>python -m harness eval --tickets eval --parallel 4</code> (or <code>--fake</code> for a dry run).</div>';
+      return;
+    }
+    var max = {};
+    COLS.forEach(function (c) { max[c.key] = Math.max.apply(null, rows.map(function (r) { return r[c.key] || 0; })); });
+    var h = '<table><thead><tr><th class="rank">#</th><th data-k="variant">Variant</th>';
+    COLS.forEach(function (c) {
+      var cls = (state.sort.key === c.key ? "sorted" + (state.sort.asc ? " asc" : "") : "") + (c.kind === "num" ? " num" : "");
+      h += '<th data-k="' + c.key + '" class="' + cls + '">' + c.label + "</th>";
+    });
+    h += "</tr></thead><tbody>";
+    rows.forEach(function (r, i) {
+      h += '<tr><td class="rank">' + (i + 1) + '</td><td><span class="vname">' + esc(r.variant) +
+        '</span> <span class="vlabel">' + esc(r.label) + "</span>" +
+        (r.tests ? '<span class="sub">' + esc(r.tests) + "</span>" : "") + "</td>";
+      COLS.forEach(function (c) {
+        var v = r[c.key];
+        if (c.kind === "pass") {
+          h += "<td>" + barCell(v, 1, "pass", Math.round(100 * v) + "%", r.ci) +
+            '<span class="sub">' + r.passes + "/" + r.runs + " · 95% " + Math.round(100 * r.ci[0]) + "–" + Math.round(100 * r.ci[1]) + "%</span></td>";
+        } else if (c.kind === "commit") {
+          h += "<td>" + barCell(v, 1, "pass", Math.round(100 * v) + "%") +
+            '<span class="sub">' + r.commits + "/" + r.runs + " committed</span></td>";
+        } else if (c.kind === "cost") {
+          h += "<td>" + barCell(v, max[c.key], "cost", fmt(v, c.nd)) + "</td>";
+        } else if (c.kind === "bar") {
+          h += "<td>" + barCell(v, max[c.key], "", fmt(v, c.nd)) + "</td>";
+        } else if (c.kind === "dur") {
+          h += "<td>" + barCell(v, max[c.key], "", fmtDur(v)) + "</td>";
+        } else {
+          h += '<td class="num' + (c.key === "errors" && v ? " bad" : "") + '">' + fmt(v, c.nd) + "</td>";
+        }
+      });
+      h += "</tr>";
+    });
+    h += "</tbody></table>";
+    $("board").innerHTML = h;
+    Array.prototype.forEach.call($("board").querySelectorAll("th[data-k]"), function (th) {
+      th.addEventListener("click", function () {
+        var k = th.getAttribute("data-k");
+        state.sort = { key: k, asc: state.sort.key === k ? !state.sort.asc : (k === "variant" || k === "credits" || k === "credits_per_pass" || k === "duration" || k === "interventions" || k === "retries" || k === "gates" || k === "errors") };
+        renderTable();
+      });
+    });
+  }
+
+  function renderMatrix() {
+    var exp = $("exp").value;
+    var runs = (state.data.runs || []).filter(function (r) { return (!exp || r.experiment === exp) && r.run_status === "done"; });
+    var tickets = {}, variants = {}, cell = {};
+    runs.forEach(function (r) {
+      tickets[r.ticket] = 1; variants[r.variant] = 1;
+      var key = r.variant + "|" + r.ticket;
+      var c = cell[key] = cell[key] || { n: 0, k: 0, c: 0 };
+      c.n += 1; c.k += r.success ? 1 : 0; c.c += committed(r) ? 1 : 0;
+    });
+    var ts = Object.keys(tickets).sort(), vs = Object.keys(variants).sort(cmpVariant);
+    if (!ts.length) { $("matrix").innerHTML = '<div class="empty">&ndash;</div>'; return; }
+    var h = '<table class="matrix"><thead><tr><th>Variant</th>';
+    ts.forEach(function (t) { h += "<th>" + esc(t) + "</th>"; });
+    h += "</tr></thead><tbody>";
+    vs.forEach(function (v) {
+      h += '<tr><td class="rowhead vname">' + esc(v) + "</td>";
+      ts.forEach(function (t) {
+        var c = cell[v + "|" + t];
+        if (!c) { h += "<td>&middot;</td>"; return; }
+        var p = c.k / c.n;
+        var style = "background:color-mix(in srgb, var(--pass) " + Math.round(15 + 70 * p) + "%, var(--bar-bg));" +
+          (p >= 0.5 ? "color:#fff" : "");
+        if (p === 0) { style = "background:var(--bar-bg);color:var(--muted)"; }
+        h += '<td><span class="chip" style="' + style + '" title="hidden pass ' + c.k + "/" + c.n +
+          ", committed " + c.c + "/" + c.n + '">' + c.k + "/" + c.n + " (" + c.c + ")</span></td>";
+      });
+      h += "</tr>";
+    });
+    $("matrix").innerHTML = h + "</tbody></table>";
+  }
+
+  function fillSelect(sel, values) {
+    var cur = sel.value, h = '<option value="">all</option>';
+    values.forEach(function (v) { h += '<option value="' + esc(v) + '"' + (v === cur ? " selected" : "") + ">" + esc(v) + "</option>"; });
+    sel.innerHTML = h;
+  }
+
+  function render() {
+    var d = state.data;
+    fillSelect($("exp"), d.experiments || []);
+    fillSelect($("ticket"), d.tickets || []);
+    var done = (d.runs || []).filter(function (r) { return r.run_status === "done"; }).length;
+    $("meta").textContent = done + " runs · " + (d.variants || []).length + " variants · " +
+      (d.tickets || []).length + " tickets · generated " + (d.generated_at || "?").replace("T", " ").replace("+00:00", " UTC");
+    renderTable();
+    renderMatrix();
+  }
+
+  function load() {
+    var tried = [];
+    function next(i) {
+      if (i >= SOURCES.length) {
+        $("status").textContent = "";
+        $("board").innerHTML = '<div class="error">Could not load ' + tried.map(esc).join(" or ") +
+          '.<br>Serve the repository root with <code>python -m http.server</code> and open this page through it, or pass <code>?src=&lt;url&gt;</code>.</div>';
+        return;
+      }
+      var url = SOURCES[i];
+      tried.push(url);
+      fetch(url + (url.indexOf("?") < 0 ? "?" : "&") + "_=" + Date.now(), { cache: "no-store" })
+        .then(function (r) { if (!r.ok) { throw new Error(r.status); } return r.json(); })
+        .then(function (d) {
+          state.data = d; state.src = url;
+          $("status").textContent = "source " + url + (REFRESH > 0 ? " · refresh " + REFRESH + " s" : "");
+          render();
+        })
+        .catch(function () { next(i + 1); });
+    }
+    next(state.src ? SOURCES.indexOf(state.src) : 0);
+  }
+
+  $("exp").addEventListener("change", render);
+  $("ticket").addEventListener("change", function () { renderTable(); });
+  $("reload").addEventListener("click", load);
+  load();
+  if (REFRESH > 0) { setInterval(load, REFRESH * 1000); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": "bash .github/hooks/scripts/guardrails.sh pre",
+        "powershell": "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .github/hooks/scripts/guardrails.ps1 pre",
+        "timeoutSec": 10
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "matcher": ".*([Aa]tlassian|[Jj]ira|[Cc]onfluence|read_ticket).*",
+        "bash": "bash .github/hooks/scripts/guardrails.sh post",
+        "powershell": "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .github/hooks/scripts/guardrails.ps1 post",
+        "timeoutSec": 10
+      }
+    ]
+  }
+}

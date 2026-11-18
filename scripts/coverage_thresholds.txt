@@ -1,0 +1,11 @@
+# coverage per-module line-coverage thresholds: <module> <source filter regex> <min %>
+# A module is checked only when tests/unit/test_<module>*.c exists; otherwise SKIP.
+proto    src/proto/    85
+codec    src/codec/    85
+txq      src/txq/      80
+rate     src/rate/     80
+clients  src/clients/  80
+capture  src/capture/  50
+net      src/net/      60
+tsrecv   tools/tsrecv/lib/ 60
+netem    tools/tsnetem/lib/ 60

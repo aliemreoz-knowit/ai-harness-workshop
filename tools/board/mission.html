@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mission board</title>
+<!--
+  Mission board for the projector: the live picture and metrics of tsrecv, the
+  ticket board and the harness level of every unit. One static file, no
+  external dependencies; everything is polled over HTTP.
+
+  All data lives in .harness/board/ of the repository (git-ignored, and outside
+  the directories the misra ticket-id scan covers):
+
+    tsrecv --metrics .harness/board/metrics.json --frame .harness/board/frame.pgm ...
+    python -m harness board init          (.harness/board/tickets.json + units.json)
+    python -m http.server 8000            (from the repository root)
+    http://localhost:8000/tools/board/mission.html
+
+  Query parameters (all optional):
+    data=<dir>      data directory             (default ../../.harness/board)
+    metrics=<url>   tsrecv metrics.json        (default <data>/metrics.json)
+    frame=<url>     tsrecv frame.pgm           (default <data>/frame.pgm)
+    feed2=<dir>     a second receiver: <dir>/metrics.json + <dir>/frame.pgm as a thumbnail
+    tickets=<url>   ticket board               (default <data>/tickets.json)
+    units=<url>     units and harness levels   (default <data>/units.json)
+    rate=<ms>       picture / metrics poll     (default 500)
+    demo=1          synthetic data, no tsrecv needed (layout check)
+    theme=dark|light
+  Keys: t = changed-tile overlay, f = full-screen picture.
+-->
+<style>
+:root {
+  --bg: #f4f5f7; --panel: #ffffff; --ink: #15171a; --muted: #626a74; --line: #dfe3e8;
+  --ok: #1f8a5b; --warn: #b7791f; --bad: #c0392b; --accent: #3a63c9; --soft: #eef0f3;
+  --mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c0e10; --panel: #15181b; --ink: #e9ebee; --muted: #8a929c; --line: #262b31;
+    --ok: #3ccf8e; --warn: #e3a948; --bad: #ff6b5b; --accent: #7aa2ff; --soft: #1f2328;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c0e10; --panel: #15181b; --ink: #e9ebee; --muted: #8a929c; --line: #262b31;
+  --ok: #3ccf8e; --warn: #e3a948; --bad: #ff6b5b; --accent: #7aa2ff; --soft: #1f2328;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.35 var(--sans); }
+main { padding: 16px; display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); max-width: 1680px; margin: 0 auto; }
+@media (min-width: 1100px) { main { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-width: 0; }
+h2 { margin: 0 0 10px; font-size: 13px; font-weight: 650; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; display: flex; justify-content: space-between; gap: 10px; }
+h2 .r { text-transform: none; letter-spacing: 0; font-weight: 500; font-family: var(--mono); }
+.stage { position: relative; background: #000; border-radius: 8px; overflow: hidden; aspect-ratio: 4 / 3; }
+.stage canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+.stage .badge { position: absolute; left: 12px; top: 12px; padding: 4px 10px; border-radius: 6px; font: 700 14px var(--mono); letter-spacing: .05em; color: #fff; background: rgba(0,0,0,.55); }
+.stage .badge.live { background: rgba(31,138,91,.85); }
+.stage .badge.frozen { background: rgba(192,57,43,.9); }
+.stage .badge.nosig { background: rgba(98,106,116,.9); }
+.stage .fpsbig { position: absolute; right: 12px; top: 10px; font: 700 28px var(--mono); color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+.stage .thumb { position: absolute; right: 12px; bottom: 12px; width: 26%; border: 2px solid rgba(255,255,255,.7); border-radius: 4px; background: #000; display: none; }
+.stage .thumb canvas { aspect-ratio: 4 / 3; height: auto; }
+.stage .thumb span { position: absolute; left: 4px; bottom: 2px; font: 600 11px var(--mono); color: #fff; text-shadow: 0 1px 2px #000; }
+.stage:fullscreen { border-radius: 0; aspect-ratio: auto; }
+.stage:fullscreen canvas { object-fit: contain; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 12px; }
+.tile { background: var(--soft); border-radius: 8px; padding: 9px 11px; min-width: 0; }
+.tile .k { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.tile .v { font: 700 24px/1.15 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile .v small { font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 3px; }
+.tile .s { font: 12px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile svg { display: block; width: 100%; height: 26px; margin-top: 4px; }
+.tile.ok .v { color: var(--ok); } .tile.warn .v { color: var(--warn); } .tile.bad .v { color: var(--bad); }
+.cols { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); }
+.col { background: var(--soft); border-radius: 8px; padding: 8px; min-height: 64px; min-width: 0; }
+.col h3 { margin: 0 0 6px; font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; display: flex; justify-content: space-between; }
+.card { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--muted); border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; font-size: 12.5px; }
+.card b { font-family: var(--mono); font-size: 12.5px; }
+.card .t { color: var(--muted); display: block; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.card .u { font: 11px var(--mono); color: var(--accent); }
+.card.s-in_progress { border-left-color: var(--accent); } .card.s-gates, .card.s-review { border-left-color: var(--warn); }
+.card.s-hil_ready, .card.s-on_pi { border-left-color: #8e5cd9; } .card.s-done { border-left-color: var(--ok); } .card.s-blocked { border-left-color: var(--bad); }
+.units { display: grid; gap: 6px; }
+.unit { display: grid; grid-template-columns: minmax(90px, 1.2fr) auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 6px 8px; background: var(--soft); border-radius: 8px; }
+.unit .n { font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ladder { display: flex; gap: 4px; }
+.ladder i { width: 26px; height: 18px; border-radius: 4px; background: var(--line); font: 600 10px/18px var(--mono); text-align: center; font-style: normal; color: var(--muted); }
+.ladder i.on { background: var(--accent); color: #fff; }
+.unit .x { font: 12px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+.levels { margin-top: 8px; font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.foot { font: 12px var(--mono); color: var(--muted); margin-top: 10px; }
+.err { color: var(--bad); }
+.empty { color: var(--muted); font-size: 13px; padding: 6px 2px; }
+</style>
+</head>
+<body>
+<main>
+  <section class="panel" id="live">
+    <h2><span>Live stream</span><span class="r" id="state">&ndash;</span></h2>
+    <div class="stage" id="stage">
+      <canvas id="pic" width="320" height="240"></canvas>
+      <span class="badge nosig" id="badge">NO SIGNAL</span>
+      <span class="fpsbig" id="fpsbig"></span>
+      <div class="thumb" id="thumb"><canvas id="pic2" width="320" height="240"></canvas><span id="thumbtxt">rx 2</span></div>
+    </div>
+    <div class="tiles" id="tiles"></div>
+    <div class="foot" id="foot"></div>
+  </section>
+  <div style="display:grid;gap:16px;align-content:start;min-width:0">
+    <section class="panel">
+      <h2><span>Tickets</span><span class="r" id="tcount"></span></h2>
+      <div class="cols" id="cols"><div class="empty">loading&hellip;</div></div>
+    </section>
+    <section class="panel">
+      <h2><span>Harness level per unit</span><span class="r" id="ucount"></span></h2>
+      <div class="units" id="units"><div class="empty">loading&hellip;</div></div>
+      <div class="levels" id="levels"></div>
+    </section>
+  </div>
+</main>
+<script>
+(function () {
+  "use strict";
+  var P = new URLSearchParams(location.search);
+  var theme = P.get("theme");
+  if (theme === "dark" || theme === "light") { document.documentElement.setAttribute("data-theme", theme); }
+  var DATA = (P.get("data") || "../../.harness/board").replace(/\/$/, "") + "/";
+  var CFG = {
+    metrics: P.get("metrics") || DATA + "metrics.json",
+    frame: P.get("frame") || DATA + "frame.pgm",
+    feed2: P.get("feed2"),
+    tickets: P.get("tickets") || DATA + "tickets.json",
+    units: P.get("units") || DATA + "units.json",
+    rate: Math.max(100, Number(P.get("rate")) || 500),
+    demo: P.get("demo") === "1"
+  };
+  var DEFAULT_STATES = ["todo", "in_progress", "gates", "review", "hil_ready", "on_pi", "done", "blocked"];
+  var STATE_LABEL = { todo: "To do", in_progress: "In progress", gates: "Gates", review: "Review",
+    hil_ready: "HIL ready", on_pi: "On the Pi", done: "Done", blocked: "Blocked" };
+  var DEFAULT_LEVELS = { "1": "L1 context + prompts", "2": "L2 gates + iteration", "3": "L3 roles + guardrails + compliance",
+    "4": "L4 autonomy + eval", "5": "L5 team workflow + handover" };
+  var W = 320, H = 240, TX = 20, TY = 15;
+  var $ = function (id) { return document.getElementById(id); };
+  var hist = { fps: [], kbps: [], nacks: [], lat: [], psnr: [] };
+  var HMAX = 120;
+  var last = { uptime: null, seenAt: 0, nacks: null, nacksAt: 0, nackRate: 0, m: null, okAt: 0 };
+  var overlay = false;
+  var frames = { main: null, second: null };
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function bust(url) { return url + (url.indexOf("?") < 0 ? "?" : "&") + "_=" + Date.now(); }
+  function getJSON(url) {
+    return fetch(bust(url), { cache: "no-store" }).then(function (r) { if (!r.ok) { throw new Error(url + ": " + r.status); } return r.json(); });
+  }
+  function getBytes(url) {
+    return fetch(bust(url), { cache: "no-store" }).then(function (r) { if (!r.ok) { throw new Error(url + ": " + r.status); } return r.arrayBuffer(); });
+  }
+  function push(a, v) { a.push(v); if (a.length > HMAX) { a.shift(); } }
+
+  // ---- PGM (P5, 8-bit) --------------------------------------------------
+  function parsePGM(buf) {
+    var b = new Uint8Array(buf), i = 0, fields = [];
+    function skipWs() {
+      while (i < b.length) {
+        if (b[i] === 35) { while (i < b.length && b[i] !== 10) { i++; } }        // # comment
+        else if (b[i] === 32 || b[i] === 9 || b[i] === 10 || b[i] === 13) { i++; }
+        else { break; }
+      }
+    }
+    while (fields.length < 4 && i < b.length) {
+      skipWs();
+      var s = i;
+      while (i < b.length && b[i] > 32) { i++; }
+      fields.push(String.fromCharCode.apply(null, b.subarray(s, i)));
+    }
+    i++;                                                                          // one whitespace byte
+    var w = Number(fields[1]), h = Number(fields[2]), max = Number(fields[3]);
+    if (fields[0] !== "P5" || !(w > 0) || !(h > 0) || max !== 255 || b.length - i < w * h) { throw new Error("bad PGM"); }
+    return { w: w, h: h, px: b.subarray(i, i + w * h) };
+  }
+  function draw(canvas, img, tiles) {
+    if (canvas.width !== img.w || canvas.height !== img.h) { canvas.width = img.w; canvas.height = img.h; }
+    var ctx = canvas.getContext("2d"), out = ctx.createImageData(img.w, img.h), d = out.data, px = img.px;
+    for (var p = 0, q = 0; p < px.length; p++, q += 4) { d[q] = d[q + 1] = d[q + 2] = px[p]; d[q + 3] = 255; }
+    ctx.putImageData(out, 0, 0);
+    if (tiles && overlay) {
+      var tw = img.w / TX, th = img.h / TY;
+      ctx.fillStyle = "rgba(255,170,40,0.28)"; ctx.strokeStyle = "rgba(255,170,40,0.75)"; ctx.lineWidth = 1;
+      tiles.forEach(function (row, y) {
+        for (var x = 0; x < row.length; x++) {
+          if (row.charAt(x) === "1") { ctx.fillRect(x * tw, y * th, tw, th); ctx.strokeRect(x * tw + 0.5, y * th + 0.5, tw - 1, th - 1); }
+        }
+      });
+    }
+  }
+
+  // ---- metrics tiles -----------------------------------------------------
+  function spark(a, color) {
+    if (a.length < 2) { return "<svg></svg>"; }
+    var max = Math.max.apply(null, a), min = Math.min.apply(null, a), span = max - min || 1, n = a.length;
+    var pts = a.map(function (v, i) { return (100 * i / (HMAX - 1)).toFixed(1) + "," + (24 - 22 * (v - min) / span).toFixed(1); });
+    return '<svg viewBox="0 0 100 26" preserveAspectRatio="none"><polyline fill="none" stroke="' + color +
+      '" stroke-width="1.6" vector-effect="non-scaling-stroke" points="' + pts.join(" ") + '"/></svg>' + (n ? "" : "");
+  }
+  function tile(k, v, unit, sub, cls, sp) {
+    return '<div class="tile ' + (cls || "") + '"><div class="k">' + k + '</div><div class="v">' + v +
+      (unit ? "<small>" + unit + "</small>" : "") + "</div>" + (sub ? '<div class="s">' + sub + "</div>" : "") + (sp || "") + "</div>";
+  }
+  function num(v, nd) { return typeof v === "number" && isFinite(v) ? v.toFixed(nd) : "–"; }
+  function fmtUp(ms) {
+    if (typeof ms !== "number") { return "–"; }
+    var s = Math.floor(ms / 1000), m = Math.floor(s / 60);
+    return m + ":" + String(s % 60).padStart(2, "0");
+  }
+
+  function renderMetrics(m) {
+    var now = Date.now();
+    if (m.uptime_ms !== last.uptime) { last.uptime = m.uptime_ms; last.seenAt = now; }
+    if (last.nacks != null && now > last.nacksAt) {
+      var dt = (now - last.nacksAt) / 1000;
+      if (dt >= 0.9) { last.nackRate = Math.max(0, (m.nacks_sent - last.nacks) / dt); last.nacks = m.nacks_sent; last.nacksAt = now; }
+    } else { last.nacks = m.nacks_sent; last.nacksAt = now; }
+    push(hist.fps, Number(m.fps) || 0); push(hist.kbps, m.kbps || 0); push(hist.nacks, last.nackRate);
+    push(hist.lat, m.latency_ms || 0);
+    push(hist.psnr, Number(m.psnr_db) === 0 && m.psnr_src && m.psnr_src !== "none" ? 60 : Number(m.psnr_db) || 0);
+    var stale = now - last.seenAt > 3000;
+    var frozen = (m.freeze_ms_current || 0) > 0;
+    var badge = $("badge");
+    if (stale || m.state !== "streaming") { badge.className = "badge nosig"; badge.textContent = stale ? "NO SIGNAL" : String(m.state || "").toUpperCase(); }
+    else if (frozen) { badge.className = "badge frozen"; badge.textContent = "FROZEN " + (m.freeze_ms_current / 1000).toFixed(1) + " s"; }
+    else { badge.className = "badge live"; badge.textContent = "LIVE"; }
+    $("fpsbig").textContent = stale ? "" : num(Number(m.fps), 1) + " fps";
+    $("state").textContent = (m.state || "?") + " · up " + fmtUp(m.uptime_ms) + " · stream " + (m.stream_id != null ? m.stream_id : "?");
+    var fps = Number(m.fps) || 0, loss = Number(m.loss_pct) || 0, psnr = Number(m.psnr_db);
+    var d = m.daemon || {};
+    var h = "";
+    h += tile("fps", num(fps, 1), "", "frames " + (m.frames_decoded || 0), fps >= 25 ? "ok" : fps >= 15 ? "warn" : "bad", spark(hist.fps, "var(--ok)"));
+    h += tile("bitrate", m.kbps != null ? m.kbps : "–", "kbit/s", "rx " + (m.pkts_rx || 0) + " pkts", "", spark(hist.kbps, "var(--accent)"));
+    h += tile("freezes", m.freezes != null ? m.freezes : "–", "", "total " + ((m.freeze_ms_total || 0) / 1000).toFixed(1) + " s", frozen ? "bad" : (m.freezes ? "warn" : "ok"));
+    h += tile("NACKs", m.nacks_sent != null ? m.nacks_sent : "–", "", num(last.nackRate, 1) + "/s · retx " + (m.retx_rx || 0) + " · give-up " + (m.nack_giveups || 0),
+      last.nackRate > 20 ? "warn" : "", spark(hist.nacks, "var(--warn)"));
+    h += tile("latency", m.latency_ms != null ? m.latency_ms : "–", "ms", "avg " + (m.latency_avg_ms != null ? m.latency_avg_ms : "–") + " · jitter " + (m.jitter_ms != null ? m.jitter_ms : "–") + " · rtt " + (m.rtt_ms != null ? m.rtt_ms : "–"),
+      (m.latency_ms || 0) > 300 ? "bad" : (m.latency_ms || 0) > 120 ? "warn" : "", spark(hist.lat, "var(--muted)"));
+    // tsrecv reports 0 dB for an identical frame (and when there is no reference: psnr_src "none")
+    var identical = psnr === 0 && m.psnr_src && m.psnr_src !== "none";
+    h += tile("PSNR", identical ? "∞" : isFinite(psnr) && psnr > 0 ? num(psnr, 1) : "–", "dB",
+      "exact " + (m.exact_match_pct != null ? m.exact_match_pct + " %" : "–") + " · " + (m.psnr_src || ""),
+      identical || psnr >= 35 ? "ok" : psnr >= 25 ? "warn" : psnr > 0 ? "bad" : "", spark(hist.psnr, "var(--accent)"));
+    h += tile("loss", num(loss, 2), "%", "residual " + num(Number(m.residual_loss_pct) || 0, 2) + " %", loss > 5 ? "warn" : "");
+    h += tile("errors", (m.crc_fail || 0) + (m.parse_fail || 0) + (m.decode_errors || 0), "", "crc " + (m.crc_fail || 0) + " · parse " + (m.parse_fail || 0) + " · decode " + (m.decode_errors || 0),
+      (m.crc_fail || 0) + (m.decode_errors || 0) > 0 ? "warn" : "");
+    h += tile("keyframes", m.keyframes != null ? m.keyframes : "–", "", "requested " + (m.keyframe_reqs || 0) + " · dropped " + (m.frames_dropped || 0));
+    // tsrecv --press / --heartbeat-ms: what happened to the viewer's own commands
+    var cmd = m.commands;
+    if (cmd && (cmd.keyframe_reqs || cmd.set_rate)) {
+      h += tile("viewer keys", cmd.keyframe_ignored || 0, "ignored", "k sent " + (cmd.keyframe_reqs || 0) + " · answered " + (cmd.keyframe_answered || 0) + " · rate " + (cmd.set_rate || 0),
+        (cmd.keyframe_ignored || 0) > 0 ? "bad" : "ok");
+    }
+    h += tile("viewers", d.client_count != null ? d.client_count : "–", "", "daemon retx " + (d.retx_sent || 0) + " · too old " + (d.nack_too_old || 0));
+    $("tiles").innerHTML = h;
+    last.m = m;
+  }
+
+  // ---- tickets and units -------------------------------------------------
+  function renderTickets(doc) {
+    var states = (doc.states && doc.states.length) ? doc.states : DEFAULT_STATES;
+    var by = {};
+    states.forEach(function (s) { by[s] = []; });
+    (doc.tickets || []).forEach(function (t) { (by[t.state] = by[t.state] || []).push(t); });
+    var shown = states.filter(function (s) { return s !== "blocked" || by[s].length; });
+    var h = "";
+    shown.forEach(function (s) {
+      h += '<div class="col"><h3><span>' + esc(STATE_LABEL[s] || s) + "</span><span>" + by[s].length + "</span></h3>";
+      by[s].forEach(function (t) {
+        h += '<div class="card s-' + esc(s) + '"><b>' + esc(t.id) + "</b>" + (t.eval ? ' <span class="u">eval</span>' : "") +
+          (t.unit ? ' <span class="u">' + esc(t.unit) + "</span>" : "") + (t.title ? '<span class="t" title="' + esc(t.title) + '">' + esc(t.title) + "</span>" : "") +
+          (t.note ? '<span class="t">' + esc(t.note) + "</span>" : "") + "</div>";
+      });
+      h += "</div>";
+    });
+    $("cols").innerHTML = h || '<div class="empty">no tickets</div>';
+    var done = (by.done || []).length, all = (doc.tickets || []).length;
+    $("tcount").textContent = done + "/" + all + " done";
+  }
+  function renderUnits(doc) {
+    var levels = doc.levels || DEFAULT_LEVELS, units = doc.units || [];
+    var h = "";
+    units.forEach(function (u) {
+      var lv = Number(u.level) || 0, lad = "";
+      for (var i = 1; i <= 5; i++) { lad += '<i class="' + (i <= lv ? "on" : "") + '">L' + i + "</i>"; }
+      h += '<div class="unit"><span class="n">' + esc(u.name || u.id) + '</span><span class="ladder">' + lad + '</span><span class="x">' +
+        esc([u.ticket, u.variant].filter(Boolean).join(" · ")) + "</span></div>";
+    });
+    $("units").innerHTML = h || '<div class="empty">no units</div>';
+    var avg = units.length ? units.reduce(function (a, u) { return a + (Number(u.level) || 0); }, 0) / units.length : 0;
+    $("ucount").textContent = units.length ? "avg L" + avg.toFixed(1) : "";
+    $("levels").innerHTML = Object.keys(levels).filter(function (k) { return k !== "0"; }).map(function (k) { return "<span>" + esc(levels[k]) + "</span>"; }).join("");
+  }
+
+  // ---- polling -----------------------------------------------------------
+  var errors = {};
+  function setErr(key, e) {
+    if (e) { errors[key] = String(e.message || e); } else { delete errors[key]; }
+    var ks = Object.keys(errors);
+    $("foot").innerHTML = ks.length ? '<span class="err">' + ks.map(function (k) { return esc(errors[k]); }).join(" · ") + "</span>"
+      : "metrics " + esc(CFG.metrics) + " · frame " + esc(CFG.frame) + " · every " + CFG.rate + " ms · t: tile overlay · f: full screen";
+  }
+  var busy = false;
+  function pollLive() {
+    if (busy) { return; }                 // a slow server never stacks up requests
+    busy = true;
+    var src = CFG.demo ? Promise.resolve(Demo.metrics()) : getJSON(CFG.metrics);
+    src.then(function (m) { renderMetrics(m); setErr("metrics"); })
+      .catch(function (e) {
+        setErr("metrics", e);
+        if (Date.now() - last.seenAt > 3000) { $("badge").className = "badge nosig"; $("badge").textContent = "NO SIGNAL"; $("fpsbig").textContent = ""; }
+      });
+    var fsrc = CFG.demo ? Promise.resolve(Demo.frame()) : getBytes(CFG.frame).then(parsePGM);
+    var fdone = fsrc.then(function (img) { frames.main = img; draw($("pic"), img, last.m && last.m.tiles); setErr("frame"); })
+      .catch(function (e) { setErr("frame", e); });
+    Promise.all([src.catch(function () {}), fdone]).then(function () { busy = false; });
+    if (CFG.feed2) {
+      var base = CFG.feed2.replace(/\/$/, "");
+      getBytes(base + "/frame.pgm").then(parsePGM).then(function (img) { $("thumb").style.display = "block"; draw($("pic2"), img, null); }).catch(function () {});
+      getJSON(base + "/metrics.json").then(function (m) {
+        $("thumbtxt").textContent = "rx 2 · " + num(Number(m.fps), 1) + " fps" + ((m.freeze_ms_current || 0) > 0 ? " · FROZEN" : "");
+      }).catch(function () {});
+    }
+  }
+  function pollBoard() {
+    var t = CFG.demo ? Promise.resolve(Demo.tickets()) : getJSON(CFG.tickets);
+    t.then(function (d) { renderTickets(d); setErr("tickets"); }).catch(function (e) { $("cols").innerHTML = '<div class="empty">' + esc(CFG.tickets) + " not found: run <code>python -m harness board init</code></div>"; setErr("tickets", e); });
+    var u = CFG.demo ? Promise.resolve(Demo.units()) : getJSON(CFG.units);
+    u.then(function (d) { renderUnits(d); setErr("units"); }).catch(function (e) { $("units").innerHTML = '<div class="empty">' + esc(CFG.units) + " not found</div>"; setErr("units", e); });
+  }
+
+  // ---- demo data (?demo=1) --------------------------------------------------
+  var Demo = (function () {
+    var t0 = Date.now(), nacks = 0, freezes = 0;
+    function frame() {
+      var t = (Date.now() - t0) / 1000, px = new Uint8Array(W * H);
+      for (var y = 0; y < H; y++) {
+        for (var x = 0; x < W; x++) {
+          var v = 96 + 60 * Math.sin((x + t * 40) / 23) * Math.cos((y - t * 15) / 31) + ((x ^ y) & 15);
+          var cx = 160 + 110 * Math.sin(t * 0.7), cy = 120 + 70 * Math.cos(t * 0.9);
+          if ((x - cx) * (x - cx) + (y - cy) * (y - cy) < 600) { v = 235; }
+          px[y * W + x] = v < 0 ? 0 : v > 255 ? 255 : v;
+        }
+      }
+      return { w: W, h: H, px: px };
+    }
+    function metrics() {
+      var t = Date.now() - t0, s = t / 1000, frozen = (s % 30) > 26;
+      nacks += Math.random() < 0.4 ? Math.floor(Math.random() * 6) : 0;
+      if (frozen && (s % 30) < 26.6) { freezes = Math.floor(s / 30) + 1; }
+      var tiles = [];
+      for (var y = 0; y < TY; y++) { var r = ""; for (var x = 0; x < TX; x++) { r += Math.random() < 0.18 ? "1" : "0"; } tiles.push(r); }
+      return { uptime_ms: t, state: "streaming", stream_id: 1, fps: frozen ? 0 : 29 + Math.random(), kbps: Math.round(780 + 120 * Math.random()),
+        pkts_rx: Math.round(s * 70), loss_pct: 1 + Math.random(), residual_loss_pct: 0.02, nacks_sent: nacks, retx_rx: Math.round(nacks * 0.9),
+        nack_giveups: 0, rtt_ms: 4, frames_decoded: Math.round(s * 29), frames_dropped: 0, decode_errors: 0, keyframes: Math.floor(s / 10) + 1,
+        keyframe_reqs: 0, freezes: freezes, freeze_ms_total: freezes * 3000, freeze_ms_current: frozen ? Math.round(((s % 30) - 26) * 1000) : 0,
+        latency_ms: Math.round(38 + 10 * Math.random()), latency_avg_ms: 41, jitter_ms: 3, exact_match_pct: 100, psnr_db: 99.99, psnr_src: "truth",
+        crc_fail: 0, parse_fail: 0, tiles: tiles, daemon: { client_count: 2, retx_sent: nacks, nack_too_old: 0 },
+        commands: { heartbeats: Math.floor(s), keyframe_reqs: Math.floor(s / 7), keyframe_answered: Math.floor(s / 7), keyframe_ignored: 0, set_rate: 0 } };
+    }
+    function tickets() {
+      var st = DEFAULT_STATES, out = [];
+      for (var i = 1; i <= 12; i++) { out.push({ id: "DEMO-" + i, title: "Demo ticket " + i, state: st[i % 7], unit: "U" + ((i % 10) + 1), eval: i % 3 === 0 }); }
+      return { states: st, tickets: out };
+    }
+    function units() {
+      var out = [];
+      for (var i = 1; i <= 10; i++) { out.push({ id: "U" + i, name: "Unit " + i, level: (i % 6), ticket: "DEMO-" + i, variant: "V" + i }); }
+      return { levels: DEFAULT_LEVELS, units: out };
+    }
+    return { frame: frame, metrics: metrics, tickets: tickets, units: units };
+  })();
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "t") { overlay = !overlay; if (frames.main) { draw($("pic"), frames.main, last.m && last.m.tiles); } }
+    if (e.key === "f") { var s = $("stage"); if (document.fullscreenElement) { document.exitFullscreen(); } else if (s.requestFullscreen) { s.requestFullscreen(); } }
+  });
+  setErr();
+  pollLive(); pollBoard();
+  setInterval(pollLive, CFG.rate);
+  setInterval(pollBoard, 3000);
+})();
+</script>
+</body>
+</html>

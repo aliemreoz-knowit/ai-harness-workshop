@@ -1,0 +1,28 @@
+/build/
+/build-*/
+.harness/runs/
+*.o
+*.pgm
+metrics.json
+__pycache__/
+.venv/
+crash-*
+leak-*
+timeout-*
+*.su
+.claude/
+*.gcov
+.harness/hooks.jsonl
+.pytest_cache/
+# eval runner output (python -m harness eval) and mission-board data files
+/results/
+.harness/board/
+# team trigger (tools/bridge): handled items and the HIL queue
+.harness/bridge/
+.harness/hil/
+
+# the setup scripts' local state (setup.sh, setup.ps1)
+.venv/
+.tools/
+.console-data/
+build-lite/

@@ -1,0 +1,435 @@
+/* The board view (views/board.js): the harness's mission board and eval leaderboard in frames, the run queue and the
+   units' credits. In the shell it is a page: the queue and the credits side by side, the two frames under them, and from
+   1900 px the frames and the lists share the window. The projector (`.board.projector`, no shell) is read from the back
+   of a room: big type, cream on navy, periwinkle bars, every unit's credits and the queue as large rows; from 1200 px it
+   fills the window with the mission board on the left. Tokens and .meter are style.css's. The frames hold the harness's
+   own pages, as they are. */
+
+.board {
+  display: grid;
+  gap: 16px;
+  min-height: 100%;
+  padding: 24px 32px 48px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "head"
+    "queue"
+    "credits"
+    "mission"
+    "leader";
+}
+
+.board-head {
+  grid-area: head;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.board-head h1 {
+  margin: 0;
+}
+
+.board-head .page-sub {
+  max-width: 640px;
+}
+
+.board-frame {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--r-box);
+  background: var(--surface);
+}
+
+.board-mission {
+  grid-area: mission;
+  height: 900px;
+}
+
+.board-leader {
+  grid-area: leader;
+  height: 640px;
+}
+
+.board-frame iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.board-box {
+  min-width: 0;
+  overflow: auto;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-box);
+  background: var(--surface);
+}
+
+.board-queue {
+  grid-area: queue;
+}
+
+.board-credits {
+  grid-area: credits;
+}
+
+.board-box h2 {
+  margin: 0 0 8px;
+}
+
+.board-box h3 {
+  margin: 12px 0 4px;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.board-box h2 + div > h3:first-child {
+  margin-top: 0;
+}
+
+.board-empty {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+.board-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.board-foot {
+  max-width: var(--measure);
+  margin: 12px 0 0;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+/* --- a run of the queue: place, unit, kind, where it is, credits ------------------------------------------------- */
+
+.q-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 8px;
+  padding: 2px 0;
+}
+
+.q-place {
+  min-width: 2ch;
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.q-place:empty {
+  display: none;
+}
+
+.q-unit {
+  font-weight: 500;
+}
+
+.q-kind,
+.q-spent {
+  color: var(--ink-2);
+}
+
+.q-state.busy {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.q-state.ok {
+  color: var(--pass);
+}
+
+.q-state.warn {
+  color: var(--warn);
+  font-weight: 500;
+}
+
+.q-state.bad {
+  color: var(--fail);
+}
+
+.q-item.over .q-unit {
+  color: var(--ink-2);
+  font-weight: 400;
+}
+
+/* --- a unit's credits: name, level, bar, used of budget, busy. In the shell one line each (fixed columns, so the bars
+   line up); on the projector two lines each: the name and level, then the bar and the numbers. ---------------------- */
+
+.unit-credit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2.5em minmax(48px, 1fr) 6.5em 3em;
+  align-items: center;
+  gap: 12px;
+  padding: 3px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.unit-name {
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.unit-level {
+  color: var(--ink-2);
+  font-family: var(--mono);
+}
+
+.unit-bar {
+  height: 6px;
+}
+
+.unit-spent {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.unit-credit.out .unit-spent {
+  color: var(--fail);
+  font-weight: 500;
+}
+
+.unit-run {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* --- the board in the shell: the two lists side by side once there is room --------------------------------------- */
+
+@media (min-width: 1100px) {
+  .board:not(.projector) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "head head"
+      "queue credits"
+      "mission mission"
+      "leader leader";
+  }
+}
+
+@media (max-width: 639px) {
+  .board:not(.projector) {
+    gap: 12px;
+    padding: 16px 16px 40px;
+  }
+
+  .board-head .btn {
+    width: 100%;
+  }
+
+  .board-mission {
+    height: 640px;
+  }
+
+  .board-leader {
+    height: 520px;
+  }
+
+  .unit-credit {
+    grid-template-columns: minmax(0, 1fr) 2.5em minmax(32px, 1fr) 6.5em;
+    gap: 8px;
+  }
+
+  .unit-run {
+    display: none; /* the queue says which runs go */
+  }
+}
+
+/* --- the projector: read from the back of the room ------------------------------------------------------------- */
+
+.board.projector {
+  gap: 12px;
+  padding: 12px;
+  font-size: 18px;
+  line-height: 26px;
+}
+
+.board.projector .board-box {
+  padding: 14px 18px;
+  background: var(--bg);
+}
+
+.board.projector .board-box h2 {
+  margin-bottom: 6px;
+  font-size: 26px;
+  line-height: 32px;
+}
+
+.board.projector .board-box h3 {
+  margin-top: 14px;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.board.projector .q-item {
+  padding: 4px 0;
+}
+
+.board.projector .q-unit,
+.board.projector .unit-name {
+  font-weight: 600;
+}
+
+.board.projector .q-kind,
+.board.projector .q-spent,
+.board.projector .unit-level {
+  color: var(--ink);
+}
+
+/* two lines a unit (also the shell's board from 1900 px, where the credits have a narrow column of their own) */
+.board.projector .unit-credit {
+  grid-template-columns: minmax(0, 1fr) 5.5em;
+  grid-template-areas:
+    "name level"
+    "bar spent";
+  gap: 0 12px;
+  padding: 5px 0;
+  border-top: 1px solid var(--line);
+  line-height: 24px;
+}
+
+.board.projector .board-units > li:first-child {
+  border-top: 0;
+}
+
+.board.projector .unit-name {
+  grid-area: name;
+}
+
+.board.projector .unit-level {
+  grid-area: level;
+  text-align: right;
+}
+
+.board.projector .unit-bar {
+  grid-area: bar;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.board.projector .unit-spent {
+  grid-area: spent;
+}
+
+.board.projector .unit-run {
+  display: none; /* the queue says which runs go */
+}
+
+.board.projector .board-foot,
+.board.projector .board-empty {
+  font-size: 0.85em;
+  line-height: 1.35;
+}
+
+/* From about 1200 px the projector fills the window: the mission board on the left (its page scrolls inside its frame
+   when the column is narrower than it wants), the leaderboard and under it the queue in the middle, and every unit's
+   credits in a column of their own on the right, so ten units fit at 1280x720 without scrolling. From 1900 px the rule
+   below takes over. */
+@media (1200px <= width < 1900px) {
+  .board.projector {
+    height: 100%;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.72fr) minmax(0, 0.5fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 0.75fr);
+    grid-template-areas:
+      "mission leader credits"
+      "mission queue credits";
+  }
+
+  .board.projector .board-mission,
+  .board.projector .board-leader {
+    height: auto;
+  }
+}
+
+/* A full-HD screen (1920 px): the board page wants 1100 px or more to use its two columns, so it gets the left side;
+   the leaderboard over the queue, then the credits, share the right. The board view in the shell does this from here
+   too; narrower windows scroll. */
+@media (min-width: 1900px) {
+  .board {
+    height: 100%;
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 0.57fr) minmax(0, 0.5fr);
+    grid-template-rows: auto minmax(0, 1fr) minmax(0, 0.7fr);
+    grid-template-areas:
+      "head head head"
+      "mission leader credits"
+      "mission queue credits";
+  }
+
+  .board:not(.projector) {
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 0.57fr) minmax(0, 0.5fr);
+    grid-template-areas:
+      "head head head"
+      "mission leader credits"
+      "mission queue credits";
+  }
+
+  .board:not(.projector) .unit-credit {
+    grid-template-columns: minmax(0, 1fr) 5.5em;
+    grid-template-areas:
+      "name level"
+      "bar spent";
+    gap: 2px 12px;
+    padding: 6px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .board:not(.projector) .board-units > li:first-child {
+    border-top: 0;
+  }
+
+  .board:not(.projector) .unit-name {
+    grid-area: name;
+  }
+
+  .board:not(.projector) .unit-level {
+    grid-area: level;
+    text-align: right;
+  }
+
+  .board:not(.projector) .unit-bar {
+    grid-area: bar;
+  }
+
+  .board:not(.projector) .unit-spent {
+    grid-area: spent;
+  }
+
+  .board:not(.projector) .unit-run {
+    display: none;
+  }
+
+  .board.projector {
+    grid-template-rows: minmax(0, 1fr) minmax(0, 0.7fr);
+    grid-template-areas:
+      "mission leader credits"
+      "mission queue credits";
+    font-size: 22px;
+    line-height: 30px;
+  }
+
+  .board.projector .board-box h2 {
+    font-size: 32px;
+    line-height: 38px;
+  }
+
+  .board-mission,
+  .board-leader {
+    height: auto;
+  }
+}

@@ -1,0 +1,6 @@
+# /etc/default/tinystreamd -- what the HIL Pi streams (tools/hil/pi/tinystreamd-run).
+# hil.py rewrites this file before every check and leaves the camera running.
+TSD_SOURCE=camera
+TSD_CLIP=/opt/tinystream/poster_30f.y8
+TSD_ARGS="--udp-port 5700 --tcp-port 5701"
+RPICAM_ARGS="-t 0 -n --codec yuv420 --width 320 --height 240 --framerate 30 -o -"

@@ -1,0 +1,5 @@
+$ scripts/check.sh misra; git apply -R "$WORKSHOP/patches/injected-change.patch"
+misra          FAIL   3311 ms (budget  30 s)  cppcheck subset        see /work/build-check/misra.log
+---- ladder: 0 PASS, 1 FAIL, 0 SKIP in 3314 ms (logs in /work/build-check)
+
+[exit 0]

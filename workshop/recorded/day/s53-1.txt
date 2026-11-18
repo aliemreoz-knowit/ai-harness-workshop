@@ -1,0 +1,6 @@
+$ python -m harness experiment start --tickets TS-104,TS-107,TS-110,TS-102 --only cheap --backend orchestrator-fake --experiment resume-demo-20261120
+[eval] experiment resume-demo-20261120: 4 runs (1 variants x 4 tickets), 0 already done, 4 to run, parallel 1
+[eval]   1/4 FAIL cheap TS-104   r0  status=escalated credits=0.0 interventions=2 retries=3 1.4s
+[eval]   2/4 FAIL cheap TS-107   r0  status=escalated credits=0.0 interventions=2 retries=3 0.5s
+
+[exit 1]

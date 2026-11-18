@@ -1,0 +1,169 @@
+/* Ship view (views/ship.js): the switch (the admin), why nothing can be shipped while it is off, the runs to ship and the
+   pull requests. Tokens and the shared components (.page, .section, .box, .table, .badge, .notice) are style.css's; the
+   view loads this file itself. */
+
+.ship-off {
+  max-width: 760px;
+  margin-bottom: 8px;
+}
+
+.ship-switch {
+  max-width: 760px;
+}
+
+.ship-switch-text {
+  max-width: var(--measure);
+  margin: 0 0 12px;
+  color: var(--ink-2);
+}
+
+.ship-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.ship-pick select {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* --- the runs to ship -------------------------------------------------------------------------------------------- */
+
+.ship-runs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ship-run-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.ship-run-id {
+  font-weight: 500;
+}
+
+.ship-pr {
+  margin-left: auto;
+}
+
+.ship-branch {
+  margin: 4px 0 12px;
+  overflow-wrap: anywhere;
+}
+
+.ship-branch code {
+  font-size: 12px;
+}
+
+/* the four actions in their order, numbered */
+.ship-steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: ship-step;
+}
+
+.ship-steps > li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  counter-increment: ship-step;
+}
+
+.ship-steps > li::before {
+  content: counter(ship-step);
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.ship-steps .ship-key {
+  flex: none;
+  width: 104px;
+}
+
+.ship-result {
+  margin: 12px 0 0;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.ship-result:empty {
+  display: none;
+}
+
+.ship-result.bad {
+  color: var(--fail);
+}
+
+/* --- the pull requests ------------------------------------------------------------------------------------------- */
+
+.ship-once {
+  margin: 0;
+}
+
+.ship-table td.ship-title {
+  min-width: 180px;
+}
+
+.ship-table code {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.ship-checks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ship-word {
+  color: var(--ink-2);
+}
+
+.ship-word.ok {
+  color: var(--pass);
+}
+
+.ship-word.bad {
+  color: var(--fail);
+}
+
+.ship-word.warn {
+  color: var(--warn);
+}
+
+@media (max-width: 639px) {
+  .ship-pr {
+    margin-left: 0;
+  }
+
+  .ship-steps > li {
+    flex: 1 1 100%;
+  }
+
+  .ship-steps .btn {
+    flex: 1;
+  }
+
+  .ship-steps .ship-key {
+    flex: 1;
+    width: auto;
+  }
+}

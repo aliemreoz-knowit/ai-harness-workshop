@@ -1,0 +1,12 @@
+$ python -m harness experiment start --tickets TS-107 --only raw --experiment kickoff-raw-20261120
+[eval] experiment kickoff-raw-20261120: 1 runs (1 variants x 1 tickets), 0 already done, 1 to run, parallel 1
+[eval]   1/1 FAIL raw  TS-107   r0  status=completed credits=2.7025 interventions=1 retries=0 108.2s
+
+variant  runs      pass      95% CI    commit  credits interv retries   dur s gates review  label
+-------------------------------------------------------------------------------------------------
+raw         1   0/1    0%     0-79%   1/1  100%     2.70    1.0     0.0     108   0.0      -  raw single agent (small model, no AGENTS.md, no gates, no retries)
+
+[eval] results: .console-data\units\unit-01\repo\results\kickoff-raw-20261120.jsonl
+[eval] board:   .console-data\units\unit-01\repo\results\results.json
+
+[exit 0]

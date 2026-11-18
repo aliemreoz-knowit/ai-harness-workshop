@@ -1,0 +1,116 @@
+{
+ "s8-1": {
+  "recorded": "recorded/day/s8-1.txt",
+  "recorded_at": "18 Nov 2026",
+  "recorded_took": "1:55",
+  "recorded_credits": "2.70"
+ },
+ "s19-1": {
+  "recorded": "recorded/day/s19-1.txt",
+  "recorded_at": "18 Nov 2026",
+  "recorded_took": "0:09",
+  "recorded_credits": "3.31"
+ },
+ "s19-2": {
+  "recorded": "recorded/day/s19-2.txt",
+  "recorded_at": "18 Nov 2026",
+  "recorded_took": "2:40",
+  "recorded_credits": "5.28"
+ },
+ "s20-1": {
+  "recorded": "recorded/day/s20-1.txt",
+  "recorded_at": "18 Nov 2026",
+  "recorded_took": "7:05",
+  "recorded_credits": "20.35"
+ },
+ "s29-1": {
+  "recorded": "recorded/day/s29-1.txt",
+  "recorded_at": "18 Nov 2026",
+  "recorded_took": "0:01",
+  "recorded_credits": "0.00"
+ },
+ "s29-2": {
+  "recorded": "recorded/day/s29-2.txt",
+  "recorded_at": "18 Nov 2026",
+  "recorded_took": "0:02",
+  "recorded_credits": "0.00"
+ },
+ "s29-3": {
+  "recorded": "recorded/day/s29-3.txt",
+  "recorded_at": "18 Nov 2026",
+  "recorded_took": "0:00",
+  "recorded_credits": "0.00"
+ },
+ "s29-4": {
+  "recorded": "recorded/day/s29-4.txt",
+  "recorded_at": "18 Nov 2026",
+  "recorded_took": "0:00",
+  "recorded_credits": "0.00"
+ },
+ "s29-5": {
+  "recorded": "recorded/day/s29-5.txt",
+  "recorded_at": "18 Nov 2026",
+  "recorded_took": "0:08",
+  "recorded_credits": "0.00"
+ },
+ "s29-6": {
+  "recorded": "recorded/day/s29-6.txt",
+  "recorded_at": "18 Nov 2026",
+  "recorded_took": "0:07",
+  "recorded_credits": "0.00"
+ },
+ "s37-1": {
+  "recorded": "recorded/day/s37-1.txt",
+  "recorded_at": "18 Nov 2026",
+  "recorded_took": "0:28",
+  "recorded_credits": "0.00"
+ },
+ "s37-2": {
+  "recorded": "recorded/day/s37-2.txt",
+  "recorded_at": "18 Nov 2026",
+  "recorded_took": "0:03",
+  "recorded_credits": "0.00"
+ },
+ "s37-3": {
+  "recorded": "recorded/day/s37-3.txt",
+  "recorded_at": "18 Nov 2026",
+  "recorded_took": "0:04",
+  "recorded_credits": "0.00"
+ },
+ "s38-2": {
+  "recorded": "recorded/day/s38-2.txt",
+  "recorded_at": "18 Nov 2026",
+  "recorded_took": "0:00",
+  "recorded_credits": "0.00"
+ },
+ "s44-1": {
+  "recorded": "recorded/day/s44-1.txt",
+  "recorded_at": "18 Nov 2026",
+  "recorded_took": "38:59",
+  "recorded_credits": "270.81"
+ },
+ "s53-1": {
+  "recorded": "recorded/day/s53-1.txt",
+  "recorded_at": "18 Nov 2026",
+  "recorded_took": "0:17",
+  "recorded_credits": "0.00"
+ },
+ "s53-2": {
+  "recorded": "recorded/day/s53-2.txt",
+  "recorded_at": "18 Nov 2026",
+  "recorded_took": "0:12",
+  "recorded_credits": "0.00"
+ },
+ "s69-1": {
+  "recorded": "recorded/day/s69-1.txt",
+  "recorded_at": "18 Nov 2026",
+  "recorded_took": "3:10",
+  "recorded_credits": "3.63"
+ },
+ "s69-2": {
+  "recorded": "recorded/day/s69-2.txt",
+  "recorded_at": "18 Nov 2026",
+  "recorded_took": "0:00",
+  "recorded_credits": "0.00"
+ }
+}

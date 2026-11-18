@@ -1,0 +1,33 @@
+# Test manifest for scripts/check.sh: every ctest executable the ladder requires.
+# Format: <ctest name> <label> [<label> ...]
+# Tests are globbed by CMake, so deleting a test file still builds; the gates
+# that run a label (unit-tests unit, property-tests property, sanitizers everything, loopback, budgets budget,
+# coverage per-module unit tests) FAIL when a test listed here for that label is
+# missing. Adding a test: add its line here in the same change.
+test_capture        unit
+test_clients        unit
+test_codec          unit
+test_harness        unit
+test_io_fake        unit
+test_net            unit
+test_netem          unit
+test_prop_codec     unit property
+test_prop_proto     unit property
+test_proto          unit
+test_rate           unit
+test_tsrecv         unit
+test_txq            unit
+test_lb_burst       loopback
+test_lb_cable_pull  loopback
+test_lb_clean       loopback
+test_lb_corrupt     loopback
+test_lb_enc_max     loopback
+test_lb_file_clip   loopback
+test_lb_loss        loopback
+test_lb_reorder     loopback
+test_lb_seq_wrap    loopback
+test_lb_seq_wrap_repair loopback
+test_lb_set_rate    loopback
+test_lb_tight_link  loopback
+test_lb_two_clients loopback
+test_budget_codec   budget

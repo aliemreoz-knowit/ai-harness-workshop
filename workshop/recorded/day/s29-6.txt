@@ -1,0 +1,5 @@
+$ git checkout -- src/rate/rate.c && python -m harness gates build
+GATES PASS (build:PASS)
+(host (Windows), 7044 ms)
+
+[exit 0]

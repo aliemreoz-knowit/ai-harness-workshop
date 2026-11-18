@@ -1,0 +1,145 @@
+# Section-1 matrix: variants.yaml with a run cap of 12 credits on gates (raw vs harness on one
+# ticket; gates otherwise runs with the default cap 40). Keep the rest in step with variants.yaml.
+#
+#   python -m harness experiment start --variants variants-section1.yaml --tickets KEY-1 --only raw,gates --parallel 2
+#
+# Experiment matrix, the eleven variants from raw to cheap (workshop design doc, section 4.4; cheap added for the cost floor,
+# raw = the raw agent of the kick-off, the calibration baseline).
+#
+# A variant = defaults <- its `extends` chain <- its own keys (roles, models
+# and extra merge key by key). Settings map 1:1 onto harness.api.RunSettings:
+#   roles                planner / implementer / test_writer / reviewer on or off
+#   models               model per role (only the roles that are on are used)
+#   retry_budget         gate- or reviewer-triggered loops before escalating
+#   custom_instructions  false = --no-custom-instructions (AGENTS.md and
+#                        .github/copilot-instructions.md are not loaded)
+#   prompt_template      orchestrator prompt template version (v1, v2)
+#   autonomy             human = approval steps are auto-passed and COUNTED in eval
+#                        mode; auto = every step runs without approval (nothing counted)
+#   gates                run the gate ladder inside the loop
+#   max_ai_credits       hard cap per run (enforced by the orchestrator, not shown to the model)
+#   timeout_s            wall-clock cap per run
+#   extra                backend knobs: escalation (false = no retry turn switches to the
+#                        role's escalation_model), role_overrides ({role: {tools, max_reads,
+#                        max_ai_credits_per_session}}: tool list, read budget, session cap),
+#                        runtime_mode (facilitator | copilot-user | auto: which caps of
+#                        harness.yaml runtimes.<mode> bound the run; defaults.extra sets
+#                        facilitator, because an eval batch runs under the facilitator's
+#                        login; auto reads the main checkout's "harness doctor" file)
+#
+# Credit caps: max_ai_credits is the run cap, a role's max_ai_credits_per_session its
+# session cap (both bounded by harness.yaml runtimes.<mode>: facilitator 40 per session,
+# 200 per run). The orchestrator's credit guard checks them on every usage event and aborts
+# the turn in flight, so a run or a session ends up to one model call above its cap:
+# overshoot 0.04-0.4 credits (one Haiku call .. one Sonnet call). Size caps with that
+# margin in mind. An unaffordable turn on the escalated model falls back to the role's own
+# model (counted as an escalation); the run goes on.
+version: 1
+workflow: jira-to-pr
+
+defaults:
+  repeats: 1                       # --repeats overrides; >= 3 gives the leaderboard its variance
+  extra: {runtime_mode: facilitator}
+  roles: {planner: false, implementer: true, test_writer: false, reviewer: false}
+  models:                          # cheapest model that passes per role (design 4.3)
+    planner: claude-sonnet-5.5
+    implementer: claude-haiku-5.5
+    test_writer: claude-haiku-5.5
+    reviewer: claude-sonnet-5.5
+  retry_budget: 3
+  custom_instructions: true
+  prompt_template: v1
+  autonomy: human
+  gates: true
+  max_ai_credits: 40
+  timeout_s: 2400
+
+# Weighted gate-violation score on the leaderboard (gates not listed weigh 1).
+gate_weights: {misra: 2, no-heap: 3, sanitizers: 3, compliance: 2}
+
+variants:
+  raw:
+    label: raw single agent (small model, no AGENTS.md, no gates, no retries)
+    tests: raw baseline
+    custom_instructions: false
+    gates: false
+    retry_budget: 0
+    max_ai_credits: 15
+    extra:
+      escalation: false
+      role_overrides:
+        implementer: {tools: [view, grep, glob, edit, create, bash, read_ticket]}
+  gates:
+    label: single agent + gates
+    tests: baseline
+    max_ai_credits: 12             # section 1: gates runs inside the same 12-credit cap as cheap
+  gates-planner:
+    label: + planner
+    tests: planning
+    roles: {planner: true}
+  gates-reviewer:                              # gates + reviewer (not gates-planner + reviewer): isolates the review loop
+    label: + reviewer
+    tests: review loop
+    roles: {reviewer: true}
+  team:
+    label: full team (4 roles)
+    tests: orchestration
+    roles: {planner: true, implementer: true, test_writer: true, reviewer: true}
+  team-prompt-v2:
+    extends: team
+    label: team + prompt template v2
+    tests: prompt quality
+    prompt_template: v2
+  team-one-retry:
+    extends: team
+    label: team, retry budget 1
+    tests: value of iteration
+    retry_budget: 1
+  team-small:
+    extends: team
+    label: team, all small model
+    tests: cost/quality
+    models: {planner: claude-haiku-5.5, implementer: claude-haiku-5.5,
+             test_writer: claude-haiku-5.5, reviewer: claude-haiku-5.5}
+    extra:
+      escalation: false            # all-Haiku: no retry turn switches to Sonnet either
+  team-large:
+    extends: team
+    label: team, all large model
+    tests: cost/quality
+    models: {planner: claude-sonnet-5.5, implementer: claude-sonnet-5.5,
+             test_writer: claude-sonnet-5.5, reviewer: claude-sonnet-5.5}
+  team-autonomous:
+    extends: team
+    label: team, fully autonomous
+    tests: HITL vs AFK
+    autonomy: auto
+  team-no-rules:
+    extends: team
+    label: team, no AGENTS.md
+    tests: value of context
+    custom_instructions: false
+  cheap:
+    extends: team
+    label: cheap harness (small model only, trimmed planner, diff-only reviewer)
+    tests: cost floor
+    # every role on Haiku and no escalation to Sonnet; the planner gets a context pack
+    # (ticket, PROTOCOL.md section index, module map; AGENTS.md as custom instructions)
+    # instead of a tree read and may open at most 4 files; the reviewer judges the diff
+    # in its prompt with no file access (prompt template "cheap")
+    # Caps (calibration 2026-10-22, 4 runs: 2.4-4.0 credits per run; per role at most
+    # planner 0.36, implementer 2.03, test-writer 1.45, reviewer 0.72): run cap 12 (3x the
+    # dearest run); session caps 2 + 6 + 3 + 2 = 13, each 2-5x its role's maximum, so one
+    # runaway role stops at its own cap and the run cap binds only when several run hot.
+    # Plus the guard overshoot of 0.04-0.4 credits (header).
+    max_ai_credits: 12
+    models: {planner: claude-haiku-5.5, implementer: claude-haiku-5.5,
+             test_writer: claude-haiku-5.5, reviewer: claude-haiku-5.5}
+    prompt_template: cheap
+    extra:
+      escalation: false
+      role_overrides:
+        planner: {tools: [view, read_ticket, write_plan], max_reads: 4, max_ai_credits_per_session: 2}
+        implementer: {max_ai_credits_per_session: 6}
+        test_writer: {max_ai_credits_per_session: 3}
+        reviewer: {tools: [write_review], max_ai_credits_per_session: 2}

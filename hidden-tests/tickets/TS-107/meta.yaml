@@ -1,0 +1,20 @@
+# What the eval code reads of this ticket: its ticket branch, the paths a change may touch and the
+# held-back tests. The tests themselves are in tests/.
+id: TS-107
+title: "Keyframe on request: the picture must come back right after a short outage"
+kind: feature
+eval: true
+ticket_branch: ticket/TS-107
+modules: [proto, net, clients, rate, codec, tsrecv]
+allowed_paths:
+  - src/net/**
+  - src/clients/**
+  - src/rate/**
+  - src/codec/**
+  - src/proto/**
+  - tools/tsrecv/**
+  - tests/unit/**
+  - tests/loopback/**
+  - scripts/test_manifest.txt
+hidden_tests:
+  - tests/loopback/test_lb_keyreq_recovery_eval.c

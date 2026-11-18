@@ -1,0 +1,180 @@
+# harness.yaml -- configuration of the tinystream agent harness (python -m harness).
+#
+# Everything the orchestrator does that is not code lives here: which runtime
+# is used, which model each role gets, the credit caps, the retry budget, the
+# permission policy per role and the paths. Workflows (workflows/*.yaml) and
+# the gate ladder (gates.yaml) are separate files next to this one.
+#
+# Environment overrides (handy in the workshop, no file edit needed):
+#   HARNESS_RUNTIME=facilitator|copilot-user|auto   HARNESS_MODEL_<ROLE>=<model id>
+#   HARNESS_RETRY_BUDGET=<n>                        HARNESS_MAX_CREDITS_RUN=<credits>
+#   HARNESS_BASELINE=auto|off
+
+version: 1
+
+# auto: "harness doctor" decides (copilot-user when the participant's own
+# Copilot login works and the role models are enabled, facilitator otherwise).
+runtime: auto
+
+# Credit caps: enforced by the orchestrator (it aborts the turn in flight when one
+# is hit). No session_limits reach the Copilot runtime: with a limit set, the
+# runtime tells the model its remaining credits and asks it to be frugal.
+# A role may set its own lower session cap (roles.<role>.max_ai_credits_per_session;
+# eval variants: extra.role_overrides). The guard checks on every usage event, so a
+# capped run or session overshoots by at most one model call: 0.04-0.4 credits.
+runtimes:
+  copilot-user:
+    description: the participant's own Copilot login (CLI logged-in user)
+    max_ai_credits_per_session: 15
+    max_ai_credits_per_run: 60
+  facilitator:
+    description: the facilitator's Copilot login; central runs, eval batches and HIL
+    max_ai_credits_per_session: 40
+    max_ai_credits_per_run: 200
+
+copilot:
+  # Path to the pinned Copilot CLI binary. Empty: COPILOT_CLI_PATH, then the
+  # npm global install (@github/copilot/node_modules/@github/copilot-<os>-<arch>).
+  # The SDK never downloads a runtime on its own (COPILOT_SKIP_CLI_DOWNLOAD=1).
+  cli_path: ""
+  expected_cli_version: 1.0.100
+  sdk_version: 1.0.23
+  log_level: warning
+  turn_timeout_s: 1800        # one send_and_wait (an agent turn with its tool calls)
+  # Shrink the system prompt: drop sections that do not help a scripted role.
+  system_message:
+    mode: customize
+    remove: [tone, guidelines]
+  # Relative price per token (input); estimates a turn on another model (escalation).
+  # Haiku 5.5 $0.10/M vs Sonnet 5.5 $2/M; measured: Haiku implementer turns 0.4-0.8
+  # credits, the Sonnet retry turns after them 9-14 credits.
+  model_cost: {claude-haiku-5.5: 1, claude-sonnet-5.5: 20}
+  # The CLI process -- and so every agent shell -- gets an allowlisted environment
+  # (harness/runtime.py ENV_ALLOW: PATH, HOME, TEMP, TLS / proxy settings, COPILOT_*, TS_*,
+  # HARNESS_*, GITHUB_ACTIONS; GITHUB_TOKEN only in Actions or with HARNESS_COPILOT_ENV_TOKEN=1),
+  # never the harness's whole environment: the bridge and HIL start the harness with their
+  # tokens set. Extra names (or prefix*) the CLI may inherit go here. JIRA_*, GH_TOKEN, HIL_*
+  # and GITHUB_MCP_TOKEN never pass, whatever this list says. Nothing is needed for tickets by
+  # Jira key: the Atlassian MCP server authenticates by OAuth (the CLI caches the token under
+  # its own home), and the github server of .github/mcp.json (header ${GITHUB_MCP_TOKEN},
+  # filled in by the CLI) is not used by harness sessions.
+  env_passthrough: []
+
+# Per-role model, tool surface and write scope. Tool names are the Copilot CLI
+# built-ins plus the harness custom tools (run_gates, read_ticket, write_plan,
+# write_review). Only listed tools are offered to the model (available_tools):
+# a small tool surface is the cheapest token saving there is.
+roles:
+  planner:
+    model: claude-sonnet-5.5
+    reasoning_effort: medium
+    tools: [view, grep, glob, read_ticket, write_plan]
+    writes: []
+    shell: []
+  implementer:
+    model: claude-haiku-5.5
+    # after the first failed attempt the retry turns may use a stronger model
+    escalation_model: claude-sonnet-5.5
+    tools: [view, grep, glob, edit, create, bash, read_ticket, run_gates]
+    writes: ["src/**", "tools/**", "fuzz/**", "PROTOCOL.md"]
+    # git: status and add only (the commit step commits); never history (policy.git_allow)
+    shell: [ls, cat, head, tail, wc, grep, find, sed -n, git status, git add]
+  test-writer:
+    model: claude-haiku-5.5
+    tools: [view, grep, glob, edit, create, bash, read_ticket, run_gates]
+    # a new test is registered in the manifest in the same change (scripts/test_manifest.txt)
+    writes: ["tests/**", "scripts/test_manifest.txt"]
+    shell: [ls, cat, head, tail, wc, grep, find, git status]
+  reviewer:
+    model: claude-sonnet-5.5
+    reasoning_effort: medium
+    tools: [view, grep, glob, read_ticket, write_review]
+    writes: []
+    shell: []
+  solo:
+    # single-agent workflow (section 1): one role does everything
+    model: claude-sonnet-5.5
+    tools: [view, grep, glob, edit, create, bash, read_ticket, run_gates]
+    writes: ["src/**", "tools/**", "fuzz/**", "tests/**", "scripts/test_manifest.txt", "PROTOCOL.md"]
+    shell: [ls, cat, head, tail, wc, grep, find, sed -n, git status]
+
+loop:
+  retry_budget: 3             # gate-triggered implementer retries per step
+  review_rounds: 2            # reviewer rejects sent back to the implementer
+  ladder_rounds: 2            # full-ladder failures sent back to the implementer (before the review)
+  # A role switches to its escalation_model (after the first failed attempt) only when the
+  # remaining budget (session cap and run cap) pays for a turn there; the estimate is the
+  # role's last turn scaled by copilot.model_cost, at least escalation_min_credits. Not
+  # affordable: the role keeps its own model for the remaining retries; a human gets the run
+  # only when the retry budget is spent (eval mode: the run ends "escalated"). A turn on the
+  # escalated model the budget no longer pays for goes back to the role's own model: a human
+  # decides in interactive mode, eval / autonomous runs do it themselves (counted as an escalation).
+  escalation_min_credits: 2
+  escalation_cost_ratio: 20   # price ratio for models missing from copilot.model_cost
+  feedback_max_items: 6       # structured feedback items per gate failure
+  feedback_excerpt_lines: 2   # source lines of context around each item
+  # Baseline-aware test gates (harness/baseline.py). auto: before the first agent turn the run
+  # records the test-type gates (gates.yaml baseline:) on the untouched base; when the base is
+  # not green, such a gate passes with no new failure and every required test passing (the
+  # ticket's "Acceptance tests", else at least one base failure fixed). off: absolute gates.
+  # HARNESS_BASELINE=auto|off overrides; the eval runner keeps it off unless a variant sets it.
+  baseline: auto
+
+policy:
+  # Never writable by any role (preToolUse hook + permission handler + diff gate).
+  protected: ["include/**", "src/pool/**", ".github/**", "scripts/**", "harness/**",
+              ".devcontainer/**", "cmake/**", "third_party/**", "CMakeLists.txt",
+              "CMakePresets.json", "AGENTS.md", ".gitattributes", ".gitignore"]
+  # Protected paths a role may still write when its write scope lists them. Same
+  # exception as diff-policy (check.sh): the test manifest changes with every new test.
+  protected_except: ["scripts/test_manifest.txt"]
+  # Shell fragments refused for every role, whatever the allowlist says.
+  shell_deny: ["rm -rf", "git push", "git commit", "git reset", "git checkout", "git config",
+               "curl", "wget", "ssh", "scp", "nc ", "sudo", "chmod", "docker", "pip install",
+               "npm install", "> /", "| sh", "| bash", "eval "]
+  # git subcommands any role may run at all (checked on every word of every shell
+  # segment, before the role allowlist). History is never readable: log, show, diff,
+  # blame, reflog, rev-list, cat-file, ... and the .git directory are refused, because
+  # on an exercise branch the history holds the answer. commit stays in shell_deny for
+  # the harness roles: the commit step commits (the Copilot CLI implementer of
+  # .github/agents commits itself, under the same rule in .github/hooks).
+  git_allow: [status, add, commit]
+  # Network: the agent may read URLs from this list only, never write anywhere.
+  url_allow: []
+  # MCP tools: only read-only tools are permitted (no network writes).
+  mcp_read_only: true
+  # Diff policy (gate compliance): forbidden calls in added lines, per path glob.
+  forbidden_calls:
+    "src/**": [malloc, calloc, realloc, free, strcpy, strcat, sprintf, gets, system, popen,
+               execl, execv, execve, execvp, fork, dlopen]
+    "**": [gets, system, popen, execve, dlopen]
+  license_header: "tinystream v2 -- {path}"
+  license_spdx: MIT           # SPDX identifier in the first lines of every new C file (check.sh compliance: changed files too)
+
+ticket:
+  max_chars: 12000
+  # Jira through the remote Atlassian MCP server (read-only, OAuth per user).
+  jira:
+    mcp_server: atlassian
+    url: https://mcp.atlassian.com/v1/mcp
+    tool: getJiraIssue
+    cloud_id_env: JIRA_CLOUD_ID
+    key_pattern: "^[A-Z][A-Z0-9]+-[0-9]+$"
+  # What to do when the sanitizer flags instruction-like text in a ticket:
+  # escalate (ask a human, counted in eval mode) | continue (flag only).
+  on_injection: escalate
+
+commit:
+  branch: "agent/{key_lower}-{run_short}"
+  # The Jira key leads the subject line (gate compliance checks it).
+  subject: "{key}: {title}"
+  trailers: ["Harness-Run: {run_id}"]
+
+paths:
+  repo: ..                    # relative to this file
+  runs: .harness/runs         # relative to the repo
+  workflows: workflows        # relative to this file
+  gates: gates.yaml           # relative to this file
+  prompts: prompts            # relative to this file
+  check_log: build-check/harness   # TS_CHECK_LOG for scripts/check.sh, relative to the repo
+  bash: ""                    # Windows host: Git Bash; empty = auto-detect

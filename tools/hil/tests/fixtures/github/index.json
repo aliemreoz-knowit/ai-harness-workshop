@@ -1,0 +1,5 @@
+{
+ "GET /repos/example-org/tinystream/issues?state=open&labels=hil-ready&per_page=100": "issues_hil_ready.json",
+ "GET /repos/example-org/tinystream/pulls/7": "pull_7.json",
+ "GET /repos/example-org/tinystream/pulls/9": "pull_9.json"
+}

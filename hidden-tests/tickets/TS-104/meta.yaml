@@ -1,0 +1,18 @@
+# What the eval code reads of this ticket: its ticket branch, the paths a change may touch and the
+# held-back tests. The tests themselves are in tests/.
+id: TS-104
+title: "After a short dropout the stream never recovers and ends up frozen"
+kind: bug
+eval: true
+ticket_branch: ticket/TS-104
+modules: [proto, txq, tsrecv]
+allowed_paths:
+  - src/proto/**
+  - src/txq/**
+  - tools/tsrecv/**
+  - tests/unit/**
+  - tests/loopback/**
+  - scripts/test_manifest.txt
+hidden_tests:
+  - tests/loopback/test_lb_long_stream_100k.c
+  - tests/loopback/test_lb_dropout_recovery_eval.c

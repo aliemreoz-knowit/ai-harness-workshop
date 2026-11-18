@@ -1,0 +1,141 @@
+# hil.yaml -- configuration of the HIL station (python tools/hil/hil.py, gate hardware).
+#
+# One HIL run = one candidate (a git ref): cross-compile the daemon, put it on
+# the target, run the checks below, compare with the budgets, write a markdown
+# report (and, from a GitHub PR, post it as a comment).
+#
+# Paths are relative to the station checkout (the repository holding this file).
+
+version: 1
+
+station:
+  # The file-source clip: recorded once on the Pi (scripts/make_clip.py --from-yuv420)
+  # or, when it is missing, the deterministic stand-in generated into work_dir.
+  clip: tests/data/poster_30f.y8
+  work_dir: build-hil          # candidates, runs, queue state (ignored by git: /build-*/)
+  tools_preset: host           # tsrecv + tsnetem are built from the station tree
+  # Whose tsrecv measures: station (this tree: tear detector, known-good receiver)
+  # or candidate (its own build-host/tsrecv: a change on the receiver side counts too;
+  # a candidate without the tear detector gets that budget SKIPped). tsnetem is
+  # always the station's. candidate: gap detection, NACKs and keyframe requests
+  # are part of the stream's behaviour, so the candidate's receiver measures;
+  # --receiver station overrides this for one run.
+  receiver: candidate
+  bash: ""                     # Windows: Git Bash (auto-detected when empty)
+
+ports: {udp: 5700, tcp: 5701, rx: 5710, relay: 5720}
+
+# The checks, in the order they run. `file` always runs; every other check runs
+# when `enabled: true` or when named in --checks (e.g. --checks file,keys).
+# source: file (the clip), pipe (the camera: rpicam-vid on the Pi; with --target
+# local tools/hil/pipe_source.py, same byte stream, short reads at the pipe
+# capacity, a scripted pause) or synth (the daemon's test pattern); the default
+# is pipe for `camera`, file for the others. Times are seconds after the relay
+# starts; `scenario` adds tsnetem steps (cumulative, tools/tsnetem/scenarios/).
+checks:
+  file:
+    title: file source
+    seconds: 10
+    # pkt_seq wraps inside the link cut; after the cut a little loss needs repairs.
+    # seq_start = 65536 - pkts_per_s * (at + preroll_s), derived from the measured
+    # rate: the daemon numbers packets from its own start and fills the ring
+    # before the viewer joins. Measured 2026-10-23 with the stand-in clip, --target
+    # local (qemu): 61 packets/s after the first keyframe, head start 3.3 s of
+    # packets (seq_start 65121). On the Pi with the recorded clip: read "packets/s"
+    # in the report, re-derive and confirm on a known-good ref.
+    wrap: {at: 3.5, pkts_per_s: 61, preroll_s: 3.3}
+    # 1 s cut: after 2 s of silence the daemon drops the viewer, and its re-HELLO
+    # would start a new stream instead of continuing this one.
+    cut: {at: 3, s: 1}         # tsnetem blackout: link cut for 1 s at t=3 s
+    scenario: ["t=5s loss=2%"] # after the cut: a few losses that need NACK repairs
+  camera:
+    title: camera source
+    enabled: true
+    seconds: 10
+    seq_start: 0
+    pause: {at: 4, s: 3}       # the camera stops (kill -STOP on the Pi) for 3 s at t=4 s
+  keys:
+    title: viewer keys
+    enabled: true
+    source: file
+    seconds: 10
+    seq_start: 0
+    # A viewer presses 'k' every 2 s with the rate heartbeat on (tsrecv
+    # --heartbeat-ms). Measured: keys sent, presses answered (a requested keyframe
+    # arrives within 1.25 s), presses ignored.
+    press: "k:2000"
+    heartbeat_ms: 1000
+
+# Budgets per check (tools/hil/budgets.py lists every key). A value that was
+# not measured fails its budget; exact_match is skipped without a reference clip.
+budgets:
+  file:
+    fps_min: 25                # before the cut
+    fps_after_min: 25          # from 1.5 s after the last scripted step (t=5 s) to the end
+    nack_ratio_max_pct: 1.0    # clean link: almost no repairs
+    crc_fail_max: 0            # clean link
+    freezes_max: 1             # the cut itself
+    recovery_ms_max: 1000      # picture back within 1 s after the cut
+    tear_frames_max: 0
+    exact_match_min_pct: 99
+    decode_errors_max: 0
+    nack_too_old_max: 0        # the ring still holds what a NACK asks for
+  camera:
+    fps_min: 25
+    fps_after_min: 25
+    freezes_max: 1             # the pause itself
+    tear_frames_max: 0
+    stats_gap_ms_max: 1800     # STATS every second, also while the camera is paused
+    reconnects_max: 0
+    exact_match_min_pct: 99    # only with the stand-in source (the camera has no reference)
+  keys:
+    fps_min: 25
+    freezes_max: 0
+    reconnects_max: 0
+    keys_answered_min: 3       # 4 presses in 10 s
+    keys_ignored_max: 0        # every 'k' brings a keyframe
+    exact_match_min_pct: 99
+
+targets:
+  local:
+    # Everything in the dev container: the daemon (pi = the static aarch64 binary
+    # under qemu-aarch64-static, host = the host build), tsnetem and tsrecv.
+    daemon_build: pi
+    approval: auto             # nothing leaves the laptop
+  pi:
+    host: 10.42.0.2
+    user: hil
+    ssh_opts: [-o, BatchMode=yes, -o, ConnectTimeout=5, -o, StrictHostKeyChecking=accept-new]
+    remote_bin: /usr/local/bin/tinystreamd
+    remote_clip: /opt/tinystream/poster_30f.y8
+    env_file: /etc/default/tinystreamd
+    unit: tinystreamd
+    push_clip: true            # copy the station clip so both ends compare the same frames
+    leave_source: camera       # what the Pi streams after the run (the projector)
+    approval: human            # facilitator B approves every deploy
+    rpicam_args: "-t 0 -n --codec yuv420 --width 320 --height 240 --framerate 30 -o -"
+    # Where tsnetem + tsrecv run: they must receive UDP from the Pi on the
+    # direct link (native on Linux / macOS; WSL2 with mirrored networking).
+    receiver:
+      runner: native           # native | docker (docker only with host networking)
+      tools_dir: build-host
+      relay_bind: 0.0.0.0
+
+queue:
+  file: build-hil/queue.txt    # one candidate per line: <git ref> [note]
+  state: build-hil/queue-state.json
+  # The team bridge's queue (tools/bridge: PRs labelled hil-ready); "" = not read.
+  # With the bridge running, the label is the bridge's: keep github.enabled false
+  # here unless the station should also comment on the PR and set hil-pass / hil-fail.
+  bridge: .harness/hil/queue.jsonl
+
+github:
+  enabled: false               # true: also take open PRs with `label`
+  repo: ""                     # owner/name
+  api: https://api.github.com
+  label: hil-ready
+  token_env: [HIL_GITHUB_TOKEN, GITHUB_TOKEN]
+  remote: origin               # git fetch <remote> pull/<n>/head
+  comment: true
+  result_labels: {pass: hil-pass, fail: hil-fail}
+  remove_trigger_label: true

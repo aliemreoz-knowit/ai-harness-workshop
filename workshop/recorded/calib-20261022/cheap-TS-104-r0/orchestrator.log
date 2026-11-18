@@ -1,0 +1,35 @@
+[harness] step ticket (ticket)
+[harness] step plan (agent, planner)
+[harness] step implement (agent_gated, implementer)
+[harness]   gates (tool): compliance:PASS diff-policy:PASS build:PASS no-heap:PASS unit-tests:FAIL property-tests:PASS
+[harness]   gates (harness): compliance:PASS diff-policy:PASS build:PASS no-heap:PASS unit-tests:FAIL property-tests:PASS
+[harness]   gates (tool): compliance:PASS diff-policy:PASS build:PASS no-heap:PASS unit-tests:PASS property-tests:PASS
+[harness]   gates (harness): compliance:PASS diff-policy:PASS build:PASS no-heap:PASS unit-tests:PASS property-tests:PASS
+[harness] step tests (agent_gated, test-writer)
+[harness]   gates (tool): compliance:PASS diff-policy:PASS build:PASS no-heap:PASS unit-tests:PASS property-tests:PASS
+[harness]   gates (harness): compliance:PASS diff-policy:PASS build:PASS no-heap:PASS unit-tests:PASS property-tests:PASS
+[harness]   test check: PASS
+[harness] step review (review, reviewer)
+[harness]   review round 1: reject (score 2)
+[harness] step implement (agent_gated, implementer)
+[harness]   gates (tool): compliance:PASS diff-policy:PASS build:PASS no-heap:PASS unit-tests:PASS property-tests:PASS
+[harness]   gates (harness): compliance:PASS diff-policy:PASS build:PASS no-heap:PASS unit-tests:PASS property-tests:PASS
+[harness] step tests (agent_gated, test-writer)
+[harness]   gates (tool): compliance:PASS diff-policy:PASS build:PASS no-heap:PASS unit-tests:PASS property-tests:PASS
+[harness]   gates (harness): compliance:PASS diff-policy:PASS build:PASS no-heap:PASS unit-tests:PASS property-tests:PASS
+[harness]   test check: PASS
+[harness] step review (review, reviewer)
+[harness]   review round 2: reject (score 3)
+[harness] step implement (agent_gated, implementer)
+[harness]   gates (harness): compliance:PASS diff-policy:PASS build:PASS no-heap:PASS unit-tests:PASS property-tests:PASS
+[harness] step tests (agent_gated, test-writer)
+[harness]   gates (tool): compliance:PASS diff-policy:PASS build:PASS no-heap:PASS unit-tests:PASS property-tests:PASS
+[harness]   gates (harness): compliance:PASS diff-policy:PASS build:PASS no-heap:PASS unit-tests:PASS property-tests:PASS
+[harness]   test check: PASS
+[harness] step review (review, reviewer)
+[harness]   review round 3: approve (score 4)
+[harness] step ladder (gates)
+[harness]   gates (harness): compliance:PASS diff-policy:PASS build:PASS misra:PASS no-heap:PASS unit-tests:PASS property-tests:PASS sanitizers:PASS loopback:PASS budgets:PASS
+[harness] step merge-approval (approval)
+[harness] step commit (commit)
+[harness]   committed cdf3ad16b4 on agent/ts-104-4cc3 (not pushed)

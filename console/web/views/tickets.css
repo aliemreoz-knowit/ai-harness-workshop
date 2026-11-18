@@ -1,0 +1,419 @@
+/* The Tickets view (views/tickets.js): the list of the Jira tickets, then one ticket with its Jira text, the editor of
+   the agent-ready version and the checklist of its sections beside it. The bar over the editor is style.css's. */
+
+/* --- the list ------------------------------------------------------------------------------------------------------- */
+
+.tk-page {
+  max-width: 1560px;
+  padding: 24px 32px 48px;
+}
+
+.tk-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px 24px;
+  margin-bottom: 16px;
+}
+
+.tk-head-text {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.tk-head h1 {
+  margin: 0;
+}
+
+.tk-message {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--warn-line);
+  border-radius: var(--r-box);
+  background: var(--warn-weak);
+}
+
+.tk-list {
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-box);
+  background: var(--surface);
+  list-style: none;
+  overflow: hidden;
+}
+
+.tk-list:empty {
+  display: none;
+}
+
+.tk-list > li {
+  margin-bottom: -1px; /* the last line of a column falls under the box's edge */
+  border-bottom: 1px solid var(--line);
+  break-inside: avoid;
+}
+
+/* a wide screen: the list in two columns, read down the first, then the second */
+@media (min-width: 1400px) {
+  .tk-list {
+    column-count: 2;
+    column-gap: 0;
+    column-rule: 1px solid var(--line);
+  }
+}
+
+.tk-loading {
+  padding: 16px;
+  color: var(--ink-2);
+}
+
+.tk-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "key title state"
+    ". meta state";
+  gap: 2px 16px;
+  padding: 10px 16px;
+  color: var(--ink);
+  text-decoration: none;
+  transition: background-color var(--fast);
+}
+
+.tk-row:hover {
+  background: var(--hover);
+}
+
+/* the ticket opened last: a tinted row, not a bar on its edge */
+.tk-row.last {
+  background: var(--accent-weak);
+}
+
+.tk-key {
+  grid-area: key;
+  font-weight: 500;
+}
+
+.tk-row-title {
+  grid-area: title;
+  min-width: 0;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.tk-row-meta {
+  grid-area: meta;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.tk-row-state {
+  grid-area: state;
+  align-self: center;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.tk-row-state.ok {
+  color: var(--pass);
+}
+
+.tk-row-state.warn {
+  color: var(--warn);
+  font-weight: 500;
+}
+
+/* --- one ticket ------------------------------------------------------------------------------------------------------ */
+
+.tk-ticket {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tk-ticket-head {
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tk-back {
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.tk-back:hover {
+  text-decoration: underline;
+}
+
+.tk-title {
+  margin: 2px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.tk-title-key {
+  margin-right: 4px;
+  color: var(--ink-2);
+}
+
+.tk-meta {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.tk-meta:empty {
+  display: none;
+}
+
+.tk-ticket > .empty {
+  margin: 0;
+}
+
+.tk-split {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) 248px;
+}
+
+.tk-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-right: 1px solid var(--line);
+}
+
+.tk-pane .caption {
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.tk-jira-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.jira-text {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 14px 20px 20px;
+  background: var(--sunken);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 23px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+
+.jira-source {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 20px;
+  white-space: pre-wrap;
+}
+
+.ticket-editor {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: var(--surface);
+}
+
+/* --- the checklist of the agent-ready sections ---------------------------------------------------------------------- */
+
+.tk-sections {
+  position: relative; /* the screen-reader-only text of an item stays inside the scrolling box */
+  min-width: 0;
+  padding: 12px 16px 16px;
+  background: var(--surface);
+  overflow: auto;
+}
+
+.tk-sections-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tk-sections h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 22px;
+}
+
+.tk-sections-count {
+  color: var(--ink-2);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tk-sections-hint {
+  margin: 2px 0 8px;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.tk-sections-hint code {
+  font-size: 12px;
+}
+
+.tk-checks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tk-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  color: var(--ink-2);
+}
+
+.tk-check.done {
+  color: var(--ink);
+}
+
+.tk-tick {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--ink-2);
+  border-radius: 4px;
+}
+
+.tk-check.done .tk-tick {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.tk-check-note {
+  margin-left: auto;
+  color: var(--warn);
+  font-size: 13px;
+}
+
+.tk-warning {
+  margin: 12px 0 0;
+  padding: 8px 10px;
+  border: 1px solid var(--warn-line);
+  border-radius: var(--r-control);
+  background: var(--warn-weak);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+/* --- smaller screens: the checklist under the two panes; under 900 px everything stacks and the page scrolls ------- */
+
+@media (max-width: 1179px) {
+  .tk-split {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .tk-mine {
+    border-right: 0;
+  }
+
+  .tk-sections {
+    grid-column: 1 / -1;
+    max-height: 40vh;
+    border-top: 1px solid var(--line);
+  }
+
+  .tk-checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 20px;
+  }
+
+  .tk-check-note {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 899px) {
+  .tk-ticket {
+    height: auto;
+  }
+
+  .tk-ticket-head {
+    padding: 12px 16px;
+  }
+
+  .tk-split {
+    flex: none;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+
+  .tk-pane {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .jira-text {
+    flex: none;
+    max-height: 280px;
+  }
+
+  .ticket-editor {
+    flex: none;
+    height: 420px;
+  }
+
+  .tk-sections {
+    max-height: none;
+    border-top: 0;
+  }
+
+  .code-bar {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 639px) {
+  .tk-page {
+    padding: 16px 16px 40px;
+  }
+
+  /* a ticket's title is a sentence: on a phone it is set smaller than a page's name */
+  .tk-title {
+    font-size: 22px;
+    line-height: 28px;
+  }
+
+  .tk-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "key state"
+      "title title"
+      "meta meta";
+    padding: 10px 12px;
+  }
+
+  .tk-ticket .code-bar .code-path {
+    flex: 1 1 100%;
+  }
+
+  .tk-ticket .code-bar .code-state {
+    flex: 1 1 auto;
+  }
+}

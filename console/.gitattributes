@@ -1,0 +1,2 @@
+# The test fixtures keep their bytes: a test compares a ticket fixture with what the console reads, byte for byte
+tests/fixtures/tickets/** -text

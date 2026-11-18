@@ -1,0 +1,17 @@
+# What the eval code reads of this ticket: its ticket branch, the paths a change may touch and the
+# held-back tests. The tests themselves are in tests/.
+id: TS-105
+title: "Viewer keys and rate changes are often ignored by the daemon"
+kind: bug
+eval: false
+ticket_branch: ticket/TS-105
+modules: [net, proto]
+allowed_paths:
+  - src/net/**
+  - src/proto/**
+  - tests/unit/**
+  - tests/loopback/**
+  - scripts/test_manifest.txt
+hidden_tests:
+  - tests/loopback/test_lb_viewer_keys_eval.c
+  - tests/unit/test_net_viewer_commands_eval.c

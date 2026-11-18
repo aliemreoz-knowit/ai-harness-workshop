@@ -1,0 +1,14 @@
+{
+  "name": "tinystream-dev",
+  "build": { "dockerfile": "Dockerfile", "context": "..", "options": ["--platform=linux/amd64"] },
+  "runArgs": ["--platform=linux/amd64"],
+  "workspaceFolder": "/work",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/work,type=bind",
+  "remoteEnv": { "HOME": "/tmp" },
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-vscode.cpptools", "ms-vscode.cmake-tools", "ms-python.python"]
+    }
+  },
+  "postCreateCommand": "cmake --preset host && cmake --build --preset host && ctest --preset host"
+}

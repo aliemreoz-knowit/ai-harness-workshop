@@ -1,0 +1,31 @@
+# tinystreamd on the HIL Pi (installed by tools/hil/pi/setup-pi.sh).
+# What it streams is set in /etc/default/tinystreamd (hil.py rewrites it before
+# every check): TSD_SOURCE=file|camera, TSD_CLIP, TSD_ARGS, RPICAM_ARGS.
+# Restart=always with RestartSec=2: a daemon crash is a visible 2 s blackout on
+# the projector, then the stream is back without anyone touching the Pi.
+[Unit]
+Description=tinystream daemon (HIL station)
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=tinystream
+Group=tinystream
+SupplementaryGroups=video render
+EnvironmentFile=-/etc/default/tinystreamd
+ExecStart=/usr/local/bin/tinystreamd-run
+Restart=always
+RestartSec=2
+# rpicam-vid and tinystreamd share the unit's cgroup: stop and restart both.
+KillMode=control-group
+TimeoutStopSec=5
+# the daemon never writes files (ProtectSystem=strict is left out on purpose:
+# libcamera may write its cache, and a camera that fails on the day costs more)
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

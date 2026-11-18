@@ -1,0 +1,61 @@
+# gates.yaml -- the gate ladder as the harness sees it (design doc 3.3).
+#
+# Every gate maps to a function of scripts/check.sh (kind: check) or to a
+# Python check inside the harness (kind: python). The harness never
+# re-implements a check.sh gate: it calls "scripts/check.sh <fn> ..." (inside
+# the devcontainer directly, on the host through scripts/dockerbuild.sh) and
+# parses the one-line result plus the gate log into structured feedback.
+#
+# budget_s: the documented time budget (check.sh flags a gate over it)
+# timeout_s: the harness kills the ladder after this many seconds
+# parser:    which log parser turns the gate log into feedback items
+# cost:      relative cost used to order a profile cheap-first
+# baseline:  tests | coverage -- a test-type gate: with loop.baseline on, it is judged against
+#            the untouched base of the run (harness/baseline.py), every other gate stays absolute
+# env:       kind check: extra environment of the check.sh call: names of the form TS_[A-Z0-9_]+ only,
+#            and not TS_IN_CONTAINER, TS_CONTAINER_NAME, TS_IMAGE, TS_CHECK_LOG, TS_PYTHON or TS_LITE (the
+#            harness's own). Any other name makes the gate an ERROR ("gate fuzz: env <name> is not allowed")
+#            and it does not run.
+#            kind python: settings the gate's function reads (gate.env), any name; never reach check.sh
+
+runner:
+  script: scripts/check.sh
+  container_wrapper: scripts/dockerbuild.sh
+  # check.sh re-executes itself through the wrapper on the host, after it has
+  # prepared the change context with the host's git (compliance/diff-policy). Started through
+  # the wrapper directly, diff-policy SKIPs in every git worktree (eval runs, seeds).
+  self_wrapping: true
+  # one check.sh invocation per profile (one container start); with
+  # stop_on_fail the gates run one by one and the ladder stops at the first FAIL
+  stop_on_fail: false
+
+gates:
+  build:          {fn: build, name: "host + Pi", kind: check, budget_s: 4, timeout_s: 300, parser: compiler, cost: 1}
+  misra:          {fn: misra, name: "cppcheck subset", kind: check, budget_s: 30, timeout_s: 300, parser: cppcheck, cost: 5}
+  no-heap:        {fn: no-heap, name: "nm + daemon run", kind: check, budget_s: 3, timeout_s: 300, parser: nm, cost: 2}
+  unit-tests:     {fn: unit-tests, name: "virtual clock", kind: check, budget_s: 2, timeout_s: 300, parser: ctest, cost: 1, baseline: tests}
+  property-tests: {fn: property-tests, name: "round trips", kind: check, budget_s: 2, timeout_s: 300, parser: ctest, cost: 1, baseline: tests}
+  sanitizers:     {fn: sanitizers, name: "ASan + UBSan", kind: check, budget_s: 20, timeout_s: 600, parser: sanitizer, cost: 6, baseline: tests}
+  fuzz:           {fn: fuzz, name: "smoke", kind: check, budget_s: 90, timeout_s: 600, parser: sanitizer, cost: 9, env: {TS_FUZZ: "1"}}
+  loopback:       {fn: loopback, name: "with budgets", kind: check, budget_s: 4, timeout_s: 300, parser: ctest, cost: 2, baseline: tests}
+  budgets:        {fn: budgets, name: "codec, size, stack", kind: check, budget_s: 2, timeout_s: 300, parser: budget, cost: 2}
+  coverage:       {fn: coverage, name: "per module", kind: check, budget_s: 15, timeout_s: 600, parser: coverage, cost: 4, baseline: coverage}
+  compliance:     {fn: "harness.compliance:check", name: "diff rules", kind: python, budget_s: 1, timeout_s: 30, parser: none, cost: 0}
+  # style/comments judge only the lines the change adds (harness/form.py), so old code never fails them. stops: false:
+  # a style or comment finding fails the ladder, but the build and test gates still run, so one round gives the
+  # agent all its feedback.
+  style:          {fn: "harness.form:style", name: "added lines", kind: python, budget_s: 1, timeout_s: 30, parser: none, cost: 0, stops: false}
+  comments:       {fn: "harness.form:docs", name: "and docs", kind: python, budget_s: 1, timeout_s: 30, parser: none, cost: 0, stops: false}
+  # check.sh diff-policy: protected paths, new process creation / code loading, new TLV types (the
+  # second line behind the preToolUse hook). check.sh has its own compliance too (Jira key in the
+  # last commit, SPDX, protocol version, TS_ALLOWED_PATHS); the harness runs the Python
+  # compliance above before the commit exists and leaves check.sh compliance to CI / the facilitator.
+  diff-policy:    {fn: diff-policy, name: "protected paths", kind: check, budget_s: 1, timeout_s: 120, parser: dp, cost: 1}
+# Named gate sets used by workflow steps. Order is cheap-first; compliance, style, comments (pure
+# Python, no container) always run before anything that costs a build.
+profiles:
+  fast:    [compliance, style, comments, diff-policy, build, no-heap, unit-tests, property-tests]
+  tests:   [compliance, style, comments, diff-policy, build, unit-tests, property-tests, coverage]
+  ladder:  [compliance, style, comments, diff-policy, build, misra, no-heap, unit-tests, property-tests, sanitizers, loopback, budgets]
+  full:    [compliance, style, comments, diff-policy, build, misra, no-heap, unit-tests, property-tests, sanitizers, loopback, budgets, coverage]
+  release: [compliance, style, comments, diff-policy, build, misra, no-heap, unit-tests, property-tests, sanitizers, fuzz, loopback, budgets, coverage]

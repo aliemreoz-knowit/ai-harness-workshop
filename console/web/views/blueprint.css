@@ -1,0 +1,291 @@
+/* Blueprint view (views/blueprint.js): the Harness Blueprint, six parts side by side, the boxes of a part filling in as
+   the day goes. The console's tokens and its section surfaces; the standalone workshop/blueprint.html keeps its own. */
+
+.page.blueprint {
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.blueprint .page-head {
+  margin-bottom: 0;
+}
+
+.bp-head-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px 32px;
+}
+
+.bp-title h1 {
+  margin: 0;
+}
+
+.bp-state {
+  text-align: right;
+}
+
+.bp-status {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 17px;
+  line-height: 24px;
+}
+
+.bp-status b {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.bp-why {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.bp-why:empty {
+  display: none;
+}
+
+/* the steps of the day: one button each, the one on show tinted, the ones reached edged in the accent */
+
+.bp-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.bp-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bp-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: color var(--fast), border-color var(--fast), background-color var(--fast);
+}
+
+.bp-step:hover {
+  color: var(--ink);
+  background: var(--hover);
+}
+
+.bp-step-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--raised);
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.bp-step.done {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.bp-step.done .bp-step-n {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.bp-step.current {
+  background: var(--accent-weak);
+}
+
+/* the six parts and their boxes */
+
+.bp-parts {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+.bp-part {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-box);
+  background: var(--surface);
+  transition: border-color 0.4s;
+}
+
+.bp-part.reached {
+  border-color: var(--accent-line);
+}
+
+.bp-sec {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.bp-part.reached .bp-sec {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.bp-part-name {
+  margin: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 24px;
+  font-weight: 300;
+  line-height: 30px;
+}
+
+.bp-box {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--r-box);
+  transition: background-color 0.5s, border-color 0.5s;
+}
+
+.bp-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bp-n {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-control);
+  background: var(--raised);
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.bp-name {
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+.bp-q {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-style: italic;
+  line-height: 18px;
+}
+
+.bp-a {
+  display: none;
+  margin: 0;
+  color: var(--ink);
+}
+
+.bp-a b {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.bp-box.filled {
+  border-style: solid;
+  background: var(--raised);
+}
+
+.bp-box.filled .bp-n {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.bp-box.filled .bp-name {
+  color: var(--ink);
+}
+
+.bp-box.filled .bp-a {
+  display: block;
+}
+
+.bp-box.new {
+  border-color: var(--accent);
+  background: var(--accent-weak);
+}
+
+.bp-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 24px;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.bp-foot kbd {
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--ink);
+}
+
+/* full screen (key f): the Blueprint alone, on the page's navy */
+.page.blueprint:fullscreen {
+  overflow: auto;
+  padding: 28px 36px 32px;
+  background: var(--bg);
+}
+
+@media (max-width: 1500px) {
+  .bp-parts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .page.blueprint:fullscreen .bp-parts {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .bp-parts,
+  .page.blueprint:fullscreen .bp-parts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bp-state {
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bp-step,
+  .bp-part,
+  .bp-box {
+    transition: none;
+  }
+}

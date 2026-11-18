@@ -1,0 +1,173 @@
+/* The run timeline (web/flow.js) and the flags of weakened guardrails (web/weakmodel.js) on the run page.
+   The colours are the page's own tokens (style.css). A state is never only a colour:
+   a bar has its status in its title, a gate mark has a check or a cross, and each kind of mark has its own shape. */
+
+/* --- the timeline ------------------------------------------------------------------------------------------------------------- */
+
+.flow {
+  padding: 8px 12px 12px;
+}
+
+.flow-credits {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin: 0 0 8px;
+}
+
+.flow-credits svg {
+  flex: none;
+}
+
+.flow .hint {
+  margin: 0 0 8px;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.flow-svg {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  margin: 0 0 4px;
+  font: 11px var(--sans);
+}
+
+.flow-label {
+  fill: var(--ink);
+}
+
+.flow-tick,
+.flow-value {
+  fill: var(--ink-2);
+}
+
+.flow-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.flow-break {
+  fill: none;
+  stroke: var(--ink-2);
+  stroke-width: 1.2;
+}
+
+.flow-step,
+.flow-glyph {
+  fill: var(--on-accent);
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.flow-glyph {
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.flow-step.flow-on-light {
+  fill: var(--ink);
+}
+
+.flow-rect.flow-ok,
+.flow-mark.flow-ok {
+  fill: var(--pass);
+}
+
+.flow-rect.flow-bad,
+.flow-mark.flow-bad {
+  fill: var(--fail);
+}
+
+.flow-rect.flow-warn,
+.flow-mark.flow-warn {
+  fill: var(--warn);
+}
+
+.flow-rect.flow-busy,
+.flow-mark.flow-busy {
+  fill: var(--accent);
+}
+
+/* a step that is going: lighter, with a dashed edge */
+.flow-rect.flow-busy {
+  fill-opacity: 0.45;
+  stroke: var(--accent);
+  stroke-dasharray: 3 2;
+}
+
+.flow-rect.flow-credit {
+  fill: var(--accent);
+}
+
+.flow-rect.flow-muted,
+.flow-mark.flow-muted {
+  fill: var(--ink-2);
+}
+
+.flow-mark {
+  stroke: var(--surface);
+  stroke-width: 1;
+}
+
+/* what a pointer is on */
+.flow-bar:hover .flow-rect,
+.flow-markg:hover .flow-mark {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.flow-cap {
+  stroke: var(--warn);
+  stroke-dasharray: 4 3;
+}
+
+.flow-cap-text {
+  fill: var(--warn);
+}
+
+.flow-spark polyline {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+
+.flow-legend {
+  margin: 4px 0 12px;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+/* --- weakened guardrails (the run page; the Harness view's are in views/harness.css) ------------------------------------- */
+
+.run .badge.weak {
+  border-color: var(--warn);
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.run-weak strong {
+  color: var(--warn);
+}
+
+.run-weak {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--warn-line);
+  border-radius: 4px;
+  background: var(--warn-weak);
+}
+
+.run-weak ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .flow {
+    padding: 8px 4px 12px;
+  }
+}

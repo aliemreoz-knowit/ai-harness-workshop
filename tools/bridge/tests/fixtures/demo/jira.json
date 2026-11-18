@@ -1,0 +1,34 @@
+{
+  "_comment": "Recorded-shape Jira Cloud REST v3 responses (site https://acme.atlassian.net, project PROJ).",
+  "interactions": [
+    {"method": "GET", "url": "/rest/api/3/myself", "status": 200, "body": {"displayName": "Workshop Facilitator", "accountId": "x1"}},
+    {"method": "GET", "url": "/rest/api/3/search/jql*", "status": 200,
+     "body": {"isLast": true, "issues": [
+       {"key": "PROJ-7", "fields": {
+         "summary": "Keyframe request is ignored after a reconnect",
+         "issuetype": {"name": "Bug"}, "labels": ["daemon"], "status": {"name": "Agent Ready"},
+         "updated": "2026-11-20T09:12:00.000+0100",
+         "description": {"type": "doc", "version": 1, "content": [
+           {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "Description"}]},
+           {"type": "paragraph", "content": [{"type": "text", "text": "Pressing "}, {"type": "text", "text": "k", "marks": [{"type": "code"}]},
+                                             {"type": "text", "text": " after a reconnect does nothing."}]},
+           {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "Steps to reproduce"}]},
+           {"type": "orderedList", "content": [
+             {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Pull the cable for 3 s"}]}]},
+             {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Press k"}]}]}]},
+           {"type": "codeBlock", "attrs": {"language": "sh"}, "content": [{"type": "text", "text": "tsrecv --server 10.42.0.2:5601"}]}
+         ]}}}
+     ]}},
+    {"method": "GET", "url": "/rest/api/3/issue/PROJ-7/comment", "status": 200, "once": true, "body": {"comments": []}},
+    {"method": "GET", "url": "/rest/api/3/issue/PROJ-7/comment", "status": 200,
+     "body": {"comments": [{"id": "10001", "body": {"type": "doc", "version": 1, "content": [
+       {"type": "paragraph", "content": [{"type": "text", "text": "[tinystream-bridge:agent]"}]}]}}]}},
+    {"method": "POST", "url": "/rest/api/3/issue/PROJ-7/comment", "status": 201, "body": {"id": "10001"}},
+    {"method": "PUT", "url": "/rest/api/3/issue/PROJ-7/comment/10001", "status": 200, "body": {"id": "10001"}},
+    {"method": "PUT", "url": "/rest/api/3/issue/PROJ-7", "status": 204, "body": null},
+    {"method": "GET", "url": "/rest/api/3/issue/PROJ-7/transitions", "status": 200,
+     "body": {"transitions": [{"id": "21", "name": "Start", "to": {"name": "In Progress"}},
+                              {"id": "31", "name": "Ready for review", "to": {"name": "In Review"}}]}},
+    {"method": "POST", "url": "/rest/api/3/issue/PROJ-7/transitions", "status": 204, "body": null}
+  ]
+}
