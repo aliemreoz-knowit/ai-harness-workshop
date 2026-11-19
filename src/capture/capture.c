@@ -3,11 +3,8 @@
  * tinystream v2 -- src/capture/capture.c
  * Capture HAL (include/ts_capture.h): synth | file | pipe | v4l2 (cap_v4l2.c).
  *
- * Rules kept here: no heap, never block, never read() into the caller's frame.
- * Every byte from a file descriptor lands in the staging buffer `c->stage`
- * first; the caller's frame is written only when a complete frame is staged
- * (a frame is never encoded half old, half new). Short reads and EAGAIN are resumed on the next
- * call; the pipe source discards the U and V planes of each YUV420 frame.
+ * No heap. The file source stages each frame in `c->stage` before copying it
+ * out; the pipe source keeps only the Y plane of each YUV420 frame.
  */
 #include <stddef.h>
 #include <stdint.h>
@@ -21,7 +18,6 @@
 #include "cap_internal.h"
 
 #define CAP_PIPE_UV_BYTES   (TS_CAP_YUV420_BYTES - TS_FRAME_BYTES)
-#define CAP_PIPE_MAX_READS  8U      /* read() calls per ts_cap_read (bounded work per tick) */
 #define CAP_MAX_FPS         1000U
 
 _Static_assert(CAP_PIPE_UV_BYTES <= TS_FRAME_BYTES, "UV planes are discarded through the staging buffer");
@@ -155,18 +151,6 @@ static ts_err_t cap_file_read(ts_cap_t *c, uint8_t *frame, uint32_t now_ms)
 
 /* ---- pipe (rpicam-vid --codec yuv420) ---------------------------------- */
 
-static ts_err_t cap_set_nonblock(int fd)
-{
-    ts_err_t rc = TS_E_IO;
-    int fl = fcntl(fd, F_GETFL);
-    if (fl >= 0) {
-        if (fcntl(fd, F_SETFL, fl | O_NONBLOCK) == 0) {
-            rc = TS_OK;
-        }
-    }
-    return rc;
-}
-
 static ts_err_t cap_pipe_open(ts_cap_t *c)
 {
     ts_err_t rc = TS_E_IO;
@@ -176,84 +160,37 @@ static ts_err_t cap_pipe_open(ts_cap_t *c)
     } else if ((strlen(c->cfg.path) == 0U) || (strcmp(c->cfg.path, "-") == 0)) {
         fd = STDIN_FILENO;                         /* rpicam-vid ... -o - | tinystreamd */
     } else {
-        fd = open(c->cfg.path, O_RDONLY | O_NONBLOCK);   /* FIFO */
+        fd = open(c->cfg.path, O_RDONLY);          /* FIFO */
     }
     if (fd >= 0) {
-        rc = cap_set_nonblock(fd);
-        if (rc == TS_OK) {
-            c->fd = (int32_t)fd;
-        } else if ((c->cfg.fd < 0) && (fd != STDIN_FILENO)) {
-            (void)close(fd);
-        } else {
-            /* not ours to close */
-        }
+        c->fd = (int32_t)fd;
+        rc = TS_OK;
     }
     return rc;
 }
 
 /*
- * One step of the pipe state machine. Returns TS_OK with a complete frame,
- * TS_E_AGAIN when the fd has nothing more right now, TS_E_CLOSED on EOF,
- * TS_E_IO on a read error. `progress` tells whether any byte was consumed.
+ * One YUV420 frame per call: the Y plane goes to `frame`, the U and V planes
+ * are read into the staging buffer and dropped.
  */
-static ts_err_t cap_pipe_step(ts_cap_t *c, uint8_t *frame, bool *progress)
-{
-    ts_err_t rc = TS_E_AGAIN;
-    size_t want;
-    uint8_t *dst;
-    if (c->skip > 0U) {
-        /* discard U/V of the previous frame; the staging buffer is free at this point */
-        want = (c->skip < sizeof(c->stage)) ? c->skip : sizeof(c->stage);
-        dst = c->stage;
-    } else {
-        want = TS_FRAME_BYTES - c->partial;
-        dst = &c->stage[c->partial];
-    }
-    ssize_t n = read((int)c->fd, dst, want);
-    if (n > 0) {
-        size_t got = (size_t)n;
-        *progress = true;
-        if (got < want) {
-            c->short_reads++;
-        }
-        if (c->skip > 0U) {
-            c->skip -= got;
-        } else {
-            c->partial += got;
-            if (c->partial == TS_FRAME_BYTES) {
-                /* frame complete: hand it over, then skip its chroma */
-                (void)memcpy(frame, c->stage, TS_FRAME_BYTES);
-                c->partial = 0U;
-                c->skip = CAP_PIPE_UV_BYTES;
-                c->frame_idx++;
-                rc = TS_OK;
-            }
-        }
-    } else if (n == 0) {
-        rc = TS_E_CLOSED;
-    } else if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
-        rc = TS_E_AGAIN;
-    } else if (errno == EINTR) {
-        *progress = true;   /* try again in this call */
-    } else {
-        rc = TS_E_IO;
-    }
-    return rc;
-}
-
 static ts_err_t cap_pipe_read(ts_cap_t *c, uint8_t *frame)
 {
     ts_err_t rc = TS_E_AGAIN;
-    bool any = false;
-    bool more = true;
-    for (uint32_t i = 0U; (i < CAP_PIPE_MAX_READS) && more; i++) {
-        bool progress = false;
-        rc = cap_pipe_step(c, frame, &progress);
-        any = any || progress;
-        more = (rc == TS_E_AGAIN) && progress;
-    }
-    if ((rc == TS_E_AGAIN) && !any) {
+    ssize_t n = read((int)c->fd, frame, TS_FRAME_BYTES);
+    if (n > 0) {
+        if ((size_t)n < TS_FRAME_BYTES) {
+            c->short_reads++;
+        }
+        (void)read((int)c->fd, c->stage, CAP_PIPE_UV_BYTES);
+        c->frame_idx++;
+        rc = TS_OK;
+    } else if (n == 0) {
+        rc = TS_E_CLOSED;
+    } else if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR)) {
         c->stalls++;
+        rc = TS_E_AGAIN;
+    } else {
+        rc = TS_E_IO;
     }
     return rc;
 }
