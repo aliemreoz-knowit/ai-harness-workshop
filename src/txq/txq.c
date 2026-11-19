@@ -178,7 +178,7 @@ ts_err_t ts_txq_lookup(const ts_txq_t *q, uint16_t frame_seq, uint8_t frag_idx, 
                             rc = TS_E_NOTFOUND;
                         } else {
                             uint16_t want = (uint16_t)((uint32_t)s->pkt_seq - (uint32_t)s->frag_idx + (uint32_t)frag_idx);
-                            int32_t dist = (int32_t)newest->pkt_seq - (int32_t)want;
+                            int32_t dist = txq_seq_dist(newest->pkt_seq, want);
                             if ((dist < 0) || ((uint32_t)dist >= held)) {
                                 rc = TS_E_TOO_OLD;   /* fragment of a partially overwritten frame */
                             } else {
