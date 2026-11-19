@@ -93,6 +93,31 @@ $Root = $PSScriptRoot
 Set-Location -LiteralPath $Root
 $Start = Get-Date
 
+# Right-click > "Run with PowerShell" starts this from Explorer and closes the window when it ends: the last lines
+# (the depth, the console's address, a moved folder) would be gone before anyone reads them. Started that way, the
+# setup waits for Enter before it closes. Started from a terminal, it ends as usual.
+function Test-FromExplorer {
+    try {
+        $me = Get-CimInstance Win32_Process -Filter "ProcessId=$PID" -ErrorAction Stop
+        $parent = Get-Process -Id $me.ParentProcessId -ErrorAction Stop
+        return ($parent.ProcessName -eq 'explorer')
+    } catch {
+        return $false
+    }
+}
+$PauseAtEnd = Test-FromExplorer
+function Exit-Setup([int]$Code) {
+    if ($PauseAtEnd) {
+        Write-Host ''
+        $null = Read-Host 'Press Enter to close this window'
+    }
+    exit $Code
+}
+trap {
+    Write-Host "  FAIL  the setup stopped: $($_.Exception.Message)"
+    Exit-Setup 1
+}
+
 function Say([string]$Text) { Write-Host $Text }
 function Step([int]$N, [string]$Title) { Write-Host ''; Write-Host "[$N/8] $Title" }
 function Ok([string]$Text) { Write-Host "  ok    $Text" }
@@ -113,8 +138,8 @@ function Finish([string]$Depth, [string[]]$Lines) {
     if ($Check) { Write-Host "Check finished in $secs s. Nothing was installed." }
     else { Write-Host "Setup finished in $secs s." }
     Write-Host "Depth: $Depth"
-    if ($Depth -eq 'Look') { exit 1 }
-    exit 0
+    if ($Depth -eq 'Look') { Exit-Setup 1 }
+    Exit-Setup 0
 }
 
 function Join-Args([string[]]$List) {
@@ -240,7 +265,7 @@ if ($Root.Length -gt $MAX_ROOT) {
     $pass = @()
     if ($NoConsole) { $pass += '-NoConsole' }
     & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $target 'setup.ps1') @pass
-    exit $LASTEXITCODE
+    Exit-Setup $LASTEXITCODE
 }
 
 # --- 1. git ------------------------------------------------------------------------------------------------
