@@ -1,4 +1,0 @@
-$ echo '{"toolName":"edit","toolArgs":{"path":"include/ts_proto.h"}}' | env -u MSYS_NO_PATHCONV bash .github/hooks/scripts/guardrails.sh pre
-{"permissionDecision": "deny", "permissionDecisionReason": "guardrails: include/ts_proto.h is a protected path (scripts/protected_paths.txt); propose the change in your report instead"}
-
-[exit 0]

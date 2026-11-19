@@ -34,7 +34,7 @@
 #define TSD_MAX_FPS           1000U
 #define TSD_GLOBAL_BURST      (TS_MAX_FRAGS * TS_PKT_MAX)   /* one worst-case frame, 156640 bytes */
 #define TSD_STREAM_ID_SALT    0x7473646DU                                    /* "tsdm" */
-#define TSD_ENC_BUF_BYTES     TS_FRAME_BYTES        /* encoded frame buffer */
+#define TSD_ENC_BUF_BYTES     TS_ENC_MAX            /* encoded frame buffer */
 
 /* daemon event codes for the (compiled-out) ring log */
 #define TSD_EV_PROTO_ERR      1U
@@ -333,17 +333,27 @@ static void tsd_accept(tsd_t *d, uint32_t now_ms)
 /* ---- UDP: NACK in, retransmit out ------------------------------------------ */
 
 /* Send one admitted retransmission. ts_client_nack() already charged the
- * buckets; a re-pack or socket failure is a drop (the tokens stay spent, the
- * receiver asks again). */
-static void tsd_retransmit(tsd_t *d, const ts_client_t *c, const ts_txq_slot_t *slot)
+ * buckets and counted it as sent; a re-pack or socket failure turns it into a
+ * drop (the tokens stay spent, the receiver asks again). */
+static void tsd_retransmit(tsd_t *d, ts_client_t *c, const ts_txq_slot_t *slot)
 {
     size_t len = 0U;
+    bool sent = false;
     if (ts_txq_make_retransmit(slot, d->pkt_buf, sizeof(d->pkt_buf), &len) == TS_OK) {
         int32_t n = ts_io_udp_send(d->io, &c->udp, d->pkt_buf, len);
         if ((n > 0) && ((size_t)n == len)) {
             d->stats.retx_sent++;
             d->stats.bytes_sent += (uint32_t)len;
+            sent = true;
         }
+    }
+    if (!sent) {
+        uint32_t charged = (uint32_t)slot->len;   /* what ts_client_retx_charge() counted */
+        if (c->ctr.retx_sent > 0U) {
+            c->ctr.retx_sent--;
+        }
+        c->ctr.bytes_sent = (c->ctr.bytes_sent >= charged) ? (c->ctr.bytes_sent - charged) : 0U;
+        c->ctr.retx_dropped++;
     }
 }
 
@@ -534,6 +544,10 @@ static void tsd_send_fresh(tsd_t *d)
                 } else {
                     /* socket full (0) or unroutable (< 0): the packet is dropped like
                      * on the wire and the receiver NACKs it; it is not counted as sent */
+                    if (c->ctr.pkts_sent > 0U) {
+                        c->ctr.pkts_sent--;
+                    }
+                    c->ctr.bytes_sent = (c->ctr.bytes_sent >= len) ? (c->ctr.bytes_sent - len) : 0U;
                     if (n == 0) {
                         blocked = true;   /* stop for this tick */
                     } else {
