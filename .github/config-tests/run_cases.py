@@ -62,7 +62,8 @@ def check_config():
 
 def runner(ps):
     if "--sh" in sys.argv:       # exactly the bash variant the CLI runs (wrapper + guardrails.py)
-        return ["bash", os.path.join(REPO, ".github", "hooks", "scripts", "guardrails.sh")]
+        bash = os.environ.get("CHECK_BASH") or "bash"   # check_config.sh: the Git Bash it runs in (never WSL's)
+        return [bash, os.path.join(REPO, ".github", "hooks", "scripts", "guardrails.sh")]
     if not ps:
         return [sys.executable, os.path.join(REPO, ".github", "hooks", "scripts", "guardrails.py")]
     exe = shutil.which("pwsh") or shutil.which("powershell")
@@ -100,7 +101,7 @@ def main():
     fails = 0
     for c in cases:
         env = dict(os.environ)
-        for k in ("TS_AGENT_ROLE", "TS_ALLOW_PROTECTED"):
+        for k in ("TS_AGENT_ROLE", "TS_ALLOW_PROTECTED", "MSYS_NO_PATHCONV"):   # Git Bash: the hook script path stays convertible
             env.pop(k, None)
         env.update(c.get("env", {}))
         env["TS_REPO_ROOT"] = REPO

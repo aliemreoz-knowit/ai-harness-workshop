@@ -51,14 +51,16 @@ def main():
     with open(os.path.join(home, ".copilot", "config.json"), "w", encoding="utf-8") as f:
         json.dump({"trustedFolders": [REPO]}, f)
     os.environ["HOME"] = home
+    os.environ["USERPROFILE"] = home                      # Windows: the CLI's home is USERPROFILE, not HOME
+    os.environ["COPILOT_HOME"] = os.path.join(home, ".copilot")
     os.environ.setdefault("COPILOT_AUTO_UPDATE", "false")
     d = asyncio.run(discover())
     got = {
-        "hooks": {(h["hookType"], h.get("source", "")) for h in d["hooks"].get("hooks", []) if h.get("enabled")},
+        "hooks": {(h["hookType"], h.get("source", "").replace("\\", "/")) for h in d["hooks"].get("hooks", []) if h.get("enabled")},
         "agents": {a["name"] for a in d["agents"].get("agents", []) if a.get("source") == "project"},
         "skills": {s["name"] for s in d["skills"].get("skills", []) if s.get("source") == "project" and s.get("enabled")},
         "mcp": {m["name"] for m in d["mcp"].get("servers", []) if m.get("source") == "workspace" and m.get("enabled")},
-        "instructions": {i.get("sourcePath", "") for i in d["instructions"].get("sources", [])},
+        "instructions": {i.get("sourcePath", "").replace("\\", "/") for i in d["instructions"].get("sources", [])},
     }
     rc = 0
     for kind, want in EXPECT.items():
@@ -72,6 +74,9 @@ def main():
             print("     agent %-12s tools: %s" % (a["name"], ", ".join(a.get("tools") or ["(all)"])))
     problems = d["hooks"].get("errors", []) + d["hooks"].get("warnings", []) + d["skills"].get("errors", [])
     for p in problems:
+        if "hooks_explicit_plugins" in str(p):   # the SDK's standalone server has no plugin hooks; the repo's hooks are above
+            print("note CLI reported: %s" % p)
+            continue
         print("FAIL CLI reported: %s" % p)
         rc = 1
     print("---- copilot discovery: %s" % ("PASS" if rc == 0 else "FAIL"))
