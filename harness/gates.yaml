@@ -51,11 +51,14 @@ gates:
   # last commit, SPDX, protocol version, TS_ALLOWED_PATHS); the harness runs the Python
   # compliance above before the commit exists and leaves check.sh compliance to CI / the facilitator.
   diff-policy:    {fn: diff-policy, name: "protected paths", kind: check, budget_s: 1, timeout_s: 120, parser: dp, cost: 1}
+  # Size of the change (harness/sample_gates.py): production diff lines (tests/ and the
+  # manifest do not count) above MAX_DIFF_LINES fail, biggest files first in the feedback.
+  diff-size:  {fn: "harness.sample_gates:diff_size", name: "lines changed", kind: python, budget_s: 1, timeout_s: 30, parser: none, cost: 0, env: {MAX_DIFF_LINES: "150"}}
 # Named gate sets used by workflow steps. Order is cheap-first; compliance, style, comments (pure
 # Python, no container) always run before anything that costs a build.
 profiles:
   fast:    [compliance, style, comments, diff-policy, build, no-heap, unit-tests, property-tests]
   tests:   [compliance, style, comments, diff-policy, build, unit-tests, property-tests, coverage]
-  ladder:  [compliance, style, comments, diff-policy, build, misra, no-heap, unit-tests, property-tests, sanitizers, loopback, budgets]
-  full:    [compliance, style, comments, diff-policy, build, misra, no-heap, unit-tests, property-tests, sanitizers, loopback, budgets, coverage]
-  release: [compliance, style, comments, diff-policy, build, misra, no-heap, unit-tests, property-tests, sanitizers, fuzz, loopback, budgets, coverage]
+  ladder:  [compliance, style, comments, diff-size, diff-policy, build, misra, no-heap, unit-tests, property-tests, sanitizers, loopback, budgets]
+  full:    [compliance, style, comments, diff-size, diff-policy, build, misra, no-heap, unit-tests, property-tests, sanitizers, loopback, budgets, coverage]
+  release: [compliance, style, comments, diff-size, diff-policy, build, misra, no-heap, unit-tests, property-tests, sanitizers, fuzz, loopback, budgets, coverage]

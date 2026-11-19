@@ -113,10 +113,7 @@ static void txq_put(ts_txq_t *q, uint16_t frame_seq, uint8_t flags, uint16_t ts_
     ts_wr16(&p[TXQ_OFF_TS_MS], ts_ms);
     ts_wr16(&p[TXQ_OFF_RESERVED], 0U);
     (void)memcpy(&p[TS_HDR_LEN], payload, (size_t)payload_len);
-    {
-        uint16_t crc_len = (uint16_t)(((uint32_t)payload_len + 3U) & ~3U);
-        ts_wr32(&p[TXQ_OFF_CRC], txq_crc(p, crc_len));
-    }
+    ts_wr32(&p[TXQ_OFF_CRC], txq_crc(p, payload_len));
 
     q->pkt_seq_next = (uint16_t)(q->pkt_seq_next + 1U);
     q->pushed++;
