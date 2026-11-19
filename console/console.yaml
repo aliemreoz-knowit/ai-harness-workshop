@@ -4,7 +4,7 @@
 # Environment override: CONSOLE_PORT.
 
 port: 8765
-unit_budget: 60                 # credits per day (python -m console serve --personal --budget N changes it)
+unit_budget: 150                # credits per day (python -m console serve --personal --budget N changes it)
 run_cap: 30                     # credits per run: the stage run on TS-104 costs 15-22 (measured)
 allowed_models: [claude-haiku-5.5, claude-sonnet-5.5]
 

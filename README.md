@@ -289,7 +289,7 @@ It downloads only these, and it sends no data anywhere:
 | **Eval** | Measuring the harness, not one change: the same tickets, many runs, several variants. A test checks the code; an eval compares ways of working. |
 | **Held-back tests** | Acceptance tests kept out of the agent's copy (`hidden-tests/`, never on a ticket branch), so that no agent can tune its change to them. They judge the eval runs on the stage. |
 | **Variant** | One harness configuration in an experiment. Change one thing at a time, or you cannot tell what helped. |
-| **AI credits** | What an agent run on your own Copilot costs; 1 credit is 1 US cent. The console shows "N of 60 credits today". |
+| **AI credits** | What an agent run on your own Copilot costs; 1 credit is 1 US cent. The console shows "N of 150 credits today". |
 | **Fake model** | A scripted stand-in for the agents: no model, no credits, no code changes. A fake run shows how the harness behaves, not a fix. |
 | **Depth** | How much your laptop can run: Look, Try or Full. The last line of the setup says which. |
 
@@ -331,7 +331,7 @@ First, run the setup again. It picks up where it stopped.
 | `the console did not start (log: ...). The harness works without it.` | Read the log it names, in `.tools`. Run the setup again. |
 | You moved or renamed the folder after the first start. | Delete `.console-data` in the folder (this deletes everything you made in the console: copy out what you want to keep first), then run the setup again. |
 | Today says `Your setup could not be checked.` | Press **Check again**. The line under it says why. |
-| `This run reached its credit cap (30). Continue adds up to N more credits of today's 60.` | Press **Continue** to let the run go on, or **Stop**. See "Before your first real agent run" above. |
+| `This run reached its credit cap (30). Continue adds up to N more credits of today's 150.` | Press **Continue** to let the run go on, or **Stop**. See "Before your first real agent run" above. |
 | `This run reached its step limit on the fake model. Continue or Stop.` | Press **Continue** or **Stop**: the fake model costs nothing. |
 | `Not enough credits left for an agent run (it needs 1). The fake model needs none. Check my code stays free.` | You used today's credits. Choose "Fake model (no credits)", or use Check my code. |
 | A card says `The run needs your approval`. | The workflow stopped at a step that waits for a person. Read the plan or the diff, then press **Approve** or **Reject (stops the run)**. Nothing is committed on reject. |

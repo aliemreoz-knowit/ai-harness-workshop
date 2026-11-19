@@ -38,7 +38,7 @@ records its choice; `TS_LITE=1` in the console's environment forces lite, `TS_LI
 
 ## Credits
 
-A run is capped at 30 credits and a day at 60 (the top bar shows "N of 60 credits today"). `--budget N` sets the
+A run is capped at 30 credits and a day at 150 (the top bar shows "N of 150 credits today"). `--budget N` sets the
 daily amount; what earlier days spent does not count. Runs use your own Copilot login, or the harness's fake model
 (no model, 0 credits) when the setup found no usable login.
 

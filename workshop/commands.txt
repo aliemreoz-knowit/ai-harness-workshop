@@ -31,7 +31,7 @@ bash workshop/stage-unit.sh
 # ==== 08:00 · T tab 1 · The stage console
 cd console && TS_LITE=0 ../.venv/Scripts/python -m console serve --personal --budget 60
 # browser: http://localhost:8765/   (Today: the day section by section, with the commands of each section and their Run buttons)
-# afterwards: the header says "… of 60 credits today"; the right pane of TS-104 holds only the empty template
+# afterwards: the header says "… of 150 credits today"; the right pane of TS-104 holds only the empty template
 
 # ==== 08:05 · console · Smoke: the console says the laptop is ready
 # browser: http://localhost:8765/  Today, the Your setup box at the top. Nothing to type.
