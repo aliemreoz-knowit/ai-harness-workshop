@@ -47,7 +47,7 @@ export const AGENDA = [
     title: 'Why a raw agent is not enough',
     icon: 'bolt',
     start: '09:00',
-    end: '09:25',
+    end: '09:35',
     level: 0,
     story: {
       before: { text: 'TS-107: after a short outage the picture stays frozen for up to ten seconds. We gave the ticket to a raw agent: one small model, no repository rules, no checks, no retries.' },
@@ -99,8 +99,8 @@ export const AGENDA = [
     label: 'Section 1',
     title: 'Standardized task description and context',
     icon: 'doc',
-    start: '09:25',
-    end: '10:05',
+    start: '09:35',
+    end: '10:15',
     level: 1,
     story: {
       before: { text: 'The raw agent did not know what done means: the ticket named no tests, and the agent read no repository rules.' },
@@ -155,8 +155,8 @@ export const AGENDA = [
     label: 'Section 2',
     title: 'Verification and iteration loops',
     icon: 'shield',
-    start: '10:05',
-    end: '10:50',
+    start: '10:15',
+    end: '11:00',
     level: 2,
     story: {
       before: { text: 'The model judged its own work. On TS-107 it said "completed"; the held-back tests said FAIL.' },
@@ -215,14 +215,14 @@ export const AGENDA = [
       },
     ],
   },
-  { id: 'break-1', kind: 'break', label: 'Break', start: '10:50', end: '11:05', note: 'A break.' },
+  { id: 'break-1', kind: 'break', label: 'Break', start: '11:00', end: '11:15', note: 'A break.' },
   {
     id: 'section3',
     kind: 'block',
     label: 'Section 3',
     title: 'Agent roles, guardrails and compliance',
     icon: 'lock',
-    start: '11:05',
+    start: '11:15',
     end: '12:00',
     level: 3,
     story: {
@@ -502,7 +502,7 @@ export function slotAt(now) {
   return AGENDA.find((entry) => toMinutes(entry.start) <= at && at < toMinutes(entry.end)) ?? null;
 }
 
-/** "10:05–10:50". */
+/** "10:15–11:00". */
 export const timeText = (entry) => `${entry.start}–${entry.end}`;
 
 /** "Section 2 · Verification and iteration loops". */
