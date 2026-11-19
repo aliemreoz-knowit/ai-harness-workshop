@@ -12,8 +12,8 @@
  *     consecutive on the wire); a frame lost completely between two known
  *     frames F and F+2 is inferred as the range between them.
  *   - NACK rounds: the first after nack_delay_ms (reordering tolerance), the
- *     second ~1 RTT estimate later, then the packet is given up (counted lost)
- *     and a KEYFRAME_REQ goes out over TCP. Entries are chunked into NACK
+ *     second ~1 RTT estimate later, then the packet is given up (counted lost).
+ *     Entries are chunked into NACK
  *     packets of at most TS_NACK_MAX and limited to max_nack_per_tick per tick.
  *   - RTT estimate: EWMA of NACK -> retransmit samples.
  */
@@ -111,11 +111,12 @@ void tsr_i_gap_track(tsr_t *r, uint16_t pkt_seq, bool retransmit, uint32_t now_m
         r->pkt_seq_expect = (uint16_t)(pkt_seq + 1U);
         r->m.pkts_expected++;
     } else {
-        if (pkt_seq == r->pkt_seq_expect) {
+        int16_t d = ts_seq_diff(pkt_seq, r->pkt_seq_expect);
+        if (d == 0) {
             r->pkt_seq_expect = (uint16_t)(pkt_seq + 1U);
             r->m.pkts_expected++;
-        } else if (pkt_seq > r->pkt_seq_expect) {
-            uint32_t gap = (uint32_t)pkt_seq - (uint32_t)r->pkt_seq_expect;
+        } else if (d > 0) {
+            uint32_t gap = (uint32_t)(uint16_t)d;
             r->m.pkts_missing += gap;
             r->m.pkts_expected += gap + 1U;
             if (gap > TSR_GAP_TRACK_MAX) {
@@ -249,8 +250,6 @@ static void mark_giveup(tsr_t *r, uint16_t frame_seq, uint32_t now_ms)
         r->x.abandon_seq = frame_seq;
     }
     TS_LOG(&r->log, now_ms, TS_LOG_INFO, TS_MOD_RECEIVER, (uint16_t)TSR_EV_GIVEUP, (uint32_t)frame_seq, 0U);
-    /* the reference chain will break: ask for a keyframe right away */
-    tsr_i_request_keyframe(r, now_ms);
 }
 
 void tsr_i_nack_tick(tsr_t *r, uint32_t now_ms)
@@ -279,12 +278,7 @@ void tsr_i_nack_tick(tsr_t *r, uint32_t now_ms)
                     miss_lost(r, e);
                 }
             } else if (!mapped) {
-                /* a NACK cannot name it (several frames lost, sizes unknown): the reference
-                 * chain is broken, so ask for a keyframe now instead of after the timeout */
-                if ((e->rounds == 0U) && (age >= r->cfg.nack_delay_ms)) {
-                    e->rounds = TSR_ROUNDS_KEYREQ;
-                    tsr_i_request_keyframe(r, now_ms);
-                }
+                /* a NACK cannot name it (several frames lost, sizes unknown) */
                 if (age >= t_lost) {
                     miss_lost(r, e);
                 }

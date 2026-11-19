@@ -88,11 +88,6 @@ static int32_t slot_oldest(const tsr_t *r, bool complete_only, bool key_only, bo
     return best;
 }
 
-bool tsr_i_keyframe_in_flight(const tsr_t *r)
-{
-    return slot_oldest(r, false, true, true) >= 0;
-}
-
 uint32_t tsr_i_frame_timeout(const tsr_t *r)
 {
     uint32_t t;

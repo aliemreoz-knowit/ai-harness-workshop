@@ -327,19 +327,6 @@ static void ctl_service(tsr_t *r, uint32_t now_ms)
     }
 }
 
-void tsr_i_request_keyframe(tsr_t *r, uint32_t now_ms)
-{
-    if (tsr_i_connected(r) &&
-        ((!r->x.kreq_sent) || ((now_ms - r->x.last_kreq_ms) >= TS_KEYFRAME_COOLDOWN_MS))) {
-        if (tsr_send_keyframe_req(r) == TS_OK) {
-            r->x.kreq_sent = true;
-            r->x.last_kreq_ms = now_ms;
-            TS_LOG(&r->log, now_ms, TS_LOG_INFO, TS_MOD_RECEIVER, (uint16_t)TSR_EV_KEYREQ,
-                   (uint32_t)r->x.play_seq, 0U);
-        }
-    }
-}
-
 /* ---- tick ------------------------------------------------------------------------- */
 ts_err_t tsr_tick(tsr_t *r, uint32_t now_ms)
 {
@@ -357,9 +344,6 @@ ts_err_t tsr_tick(tsr_t *r, uint32_t now_ms)
             tsr_i_udp_drain(r, now_ms);
             tsr_i_nack_tick(r, now_ms);
             tsr_i_decode_pass(r, now_ms);
-            if (r->need_keyframe && (!tsr_i_keyframe_in_flight(r))) {
-                tsr_i_request_keyframe(r, now_ms);
-            }
             tsr_i_keepalive(r, now_ms);
             ctl_flush(r, now_ms);
         }

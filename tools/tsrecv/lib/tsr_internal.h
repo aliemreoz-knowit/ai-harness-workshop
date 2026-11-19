@@ -25,7 +25,6 @@ extern "C" {
 #define TSR_DRAIN_MAX          1024U   /**< datagrams drained per tick */
 #define TSR_GAP_TRACK_MAX      256U    /**< larger pkt_seq jumps are an outage: counted lost, not NACKed */
 #define TSR_NACK_ROUNDS        2U      /**< NACK rounds before giving up on a packet */
-#define TSR_ROUNDS_KEYREQ      0xFFU   /**< tsr_miss_t.rounds: unmappable, keyframe requested */
 #define TSR_RTT_INIT_MS        40U     /**< RTT estimate before the first sample */
 #define TSR_RETRY_MIN_MS       10U     /**< lower bound of the NACK retry interval */
 #define TSR_STALE_MS           1000U   /**< awaited frame without progress for this long is dropped */
@@ -50,11 +49,6 @@ extern "C" {
 /* ---- receiver.c -------------------------------------------------------------- */
 /** Control connection is up (TCP handle valid, not closing). */
 bool tsr_i_connected(const tsr_t *r);
-/**
- * Queue an automatic KEYFRAME_REQ, rate-limited to one per
- * TS_KEYFRAME_COOLDOWN_MS. No-op when not connected.
- */
-void tsr_i_request_keyframe(tsr_t *r, uint32_t now_ms);
 
 /* ---- reasm.c ----------------------------------------------------------------- */
 void    tsr_i_udp_drain(tsr_t *r, uint32_t now_ms);
@@ -64,8 +58,6 @@ void    tsr_i_rx_packet(tsr_t *r, const ts_hdr_t *h, const uint8_t *payload, uin
 void    tsr_i_decode_pass(tsr_t *r, uint32_t now_ms);
 /** Slot index holding `frame_seq`, or -1. */
 int32_t tsr_i_find_slot(const tsr_t *r, uint16_t frame_seq);
-/** A keyframe is being reassembled for a frame after the play position. */
-bool    tsr_i_keyframe_in_flight(const tsr_t *r);
 /** Forget all stream state (new stream_id or resync): slots, gaps, decoder reference. */
 void    tsr_i_stream_reset(tsr_t *r, uint32_t now_ms);
 /** Awaited-frame give-up time without progress (ms). */
