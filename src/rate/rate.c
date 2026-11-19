@@ -30,7 +30,7 @@ void ts_bucket_init(ts_bucket_t *b, uint32_t kbps, uint32_t burst_bytes, uint32_
 void ts_bucket_set_rate(ts_bucket_t *b, uint32_t kbps)
 {
     if (b != NULL) {
-        b->kbps = kbps;
+        b->kbps = kbps / RATE_BITS_PER_BYTE;
     }
 }
 
