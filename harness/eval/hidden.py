@@ -42,9 +42,9 @@ def docker_usable() -> bool:
 
 
 def default_command(hidden_dir: Path) -> list[str]:
-    """run.sh (the container); lite.py (zig cc here) with TS_LITE=1, or without a usable Docker unless TS_LITE=0."""
+    """lite.py (zig cc here), as scripts/check.sh runs the gates; run.sh (the container) only under TS_LITE=0."""
     lite = os.environ.get("TS_LITE", "")
-    if lite != "0" and (Path(hidden_dir) / "lite.py").is_file() and (lite == "1" or not docker_usable()):
+    if lite != "0" and (Path(hidden_dir) / "lite.py").is_file():
         return LITE_CMD
     return DEFAULT_CMD
 

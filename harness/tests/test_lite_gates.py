@@ -130,15 +130,30 @@ def test_path_with_spaces_and_non_ascii(lite_run: tuple, tmp_path: Path) -> None
 
 
 def test_unrunnable_gates_skip(tmp_path: Path) -> None:
-    done = subprocess.run([sys.executable, str(LITE), "misra", "sanitizers", "fuzz", "coverage"], cwd=REPO,
+    done = subprocess.run([sys.executable, str(LITE), "fuzz", "coverage"], cwd=REPO,
                           env=clean_env(TS_CHECK_LOG=str(tmp_path)), capture_output=True, text=True,
                           encoding="utf-8", errors="replace", timeout=120)
     gates = parse_check_output(done.stdout)
-    assert sorted(gates) == sorted(["misra", "sanitizers", "fuzz", "coverage"]), done.stdout + done.stderr
+    assert sorted(gates) == sorted(["fuzz", "coverage"]), done.stdout + done.stderr
     assert {g.status for g in gates.values()} == {"SKIP"}
     assert {g.reason for g in gates.values()} == {NEEDS_DOCKER}
     assert done.returncode == 0
-    assert (tmp_path / "misra.log").is_file()
+    assert (tmp_path / "fuzz.log").is_file()
+
+
+def test_misra_runs_without_docker_and_catches_a_forbidden_call(tmp_path: Path) -> None:
+    done = subprocess.run([sys.executable, str(LITE), "misra"], cwd=REPO, env=clean_env(TS_CHECK_LOG=str(tmp_path)),
+                          capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
+    g = parse_check_output(done.stdout)["misra"]
+    assert g.status == "PASS" and "21.21" in g.reason, done.stdout + done.stderr
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("lite_gates_mod", LITE)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod                             # its dataclasses look their module up
+    spec.loader.exec_module(mod)
+    bad = tmp_path / "bad.c"
+    bad.write_text("#include <stdio.h>\nvoid f(void) { (void)system(\"id\"); /* free(x) */ }\n", encoding="utf-8")
+    assert sorted(r for r, _, _ in mod.misra_findings(bad, "bad.c")) == ["21.21", "21.6"]
 
 
 def test_g10_is_left_to_the_harness_and_unknown_gates_are_refused(tmp_path: Path) -> None:
@@ -203,12 +218,12 @@ def test_check_sh_hands_off_to_the_lite_ladder(why: str, tmp_path: Path) -> None
         env = clean_env(**fake_docker(tmp_path / "bin", NOT_RUNNING_SH, NOT_RUNNING_BAT))
     env.update(TS_PYTHON=sys.executable, TS_CHECK_LOG=str(tmp_path / "logs"), MSYS_NO_PATHCONV="1")
     t0 = time.monotonic()
-    done = subprocess.run([str(BASH), "scripts/check.sh", "misra", "sanitizers"], cwd=REPO, env=env, capture_output=True,
+    done = subprocess.run([str(BASH), "scripts/check.sh", "fuzz", "coverage"], cwd=REPO, env=env, capture_output=True,
                           text=True, encoding="utf-8", errors="replace", timeout=120)
     assert time.monotonic() - t0 < 10
     gates = parse_check_output(done.stdout)
     assert {g: (r.status, r.reason) for g, r in gates.items()} == \
-        {"misra": ("SKIP", NEEDS_DOCKER), "sanitizers": ("SKIP", NEEDS_DOCKER)}, done.stdout + done.stderr
+        {"fuzz": ("SKIP", NEEDS_DOCKER), "coverage": ("SKIP", NEEDS_DOCKER)}, done.stdout + done.stderr
     assert done.returncode == 0
 
 
@@ -403,8 +418,8 @@ def test_doctor_without_docker_reports_the_lite_ladder(cfg: HarnessConfig, tmp_p
     monkeypatch.setattr(envdetect, "docker_usable", lambda timeout=8.0: (False, "Docker installed but not running"))
     r = doctor.run_doctor(cfg, skip_auth=True, env=host_env(tmp_path), runner=ok_runner)
     st = {c.name: c for c in r.checks}
-    assert r.ladder == "lite" and st["environment"].status == "WARN"
-    assert st["environment"].detail.startswith("Docker installed but not running")
+    assert r.ladder == "lite" and st["environment"].status == "OK"
+    assert st["environment"].detail.startswith("gates run the Docker-free ladder")
     assert st["gates"].status == "OK" and "zig 0.16.0" in st["gates"].detail
     assert r.to_dict()["ladder"] == "lite" and r.to_dict()["depth"] == "Try (fake model)"
     no_zig = lambda cmd, **kw: subprocess.CompletedProcess(cmd, 1, "", "No module named ziglang")
@@ -413,7 +428,7 @@ def test_doctor_without_docker_reports_the_lite_ladder(cfg: HarnessConfig, tmp_p
     assert gates.status == "FAIL" and "pip install ziglang==0.16.0" in gates.detail
     monkeypatch.setattr(envdetect, "docker_usable", lambda timeout=8.0: (True, ""))
     r = doctor.run_doctor(cfg, skip_auth=True, env=host_env(tmp_path), runner=ok_runner)
-    assert r.ladder == "full" and doctor.depth(r) == "Full (fake model)"
+    assert r.ladder == "lite"                                # a running Docker changes nothing: never asked
 
 
 def test_doctor_under_ts_lite_0_never_reports_the_lite_ladder(cfg: HarnessConfig, tmp_path: Path,
@@ -437,10 +452,10 @@ def test_doctor_under_ts_lite_0_never_reports_the_lite_ladder(cfg: HarnessConfig
     assert r.ladder == "full"
     assert st["environment"].status == "FAIL" and "TS_LITE=0" in st["environment"].detail
     assert st["gates"].status == "FAIL" and "Docker" in st["gates"].detail
-    waits.clear()                                          # unset: today's 8 s probe
+    waits.clear()                                          # unset: Docker is never asked
     monkeypatch.setattr(envdetect, "docker_usable", answers)
     doctor.run_doctor(cfg, skip_auth=True, env=host_env(tmp_path), runner=ok_runner)
-    assert waits == [8.0]
+    assert waits == []
 
 
 def test_doctor_cli_hint_names_winget_and_the_install_script(cfg: HarnessConfig, tmp_path: Path,

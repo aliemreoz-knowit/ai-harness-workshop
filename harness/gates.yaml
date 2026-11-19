@@ -31,11 +31,11 @@ runner:
 
 gates:
   build:          {fn: build, name: "host + Pi", kind: check, budget_s: 4, timeout_s: 300, parser: compiler, cost: 1}
-  misra:          {fn: misra, name: "cppcheck subset", kind: check, budget_s: 30, timeout_s: 300, parser: cppcheck, cost: 5}
-  no-heap:        {fn: no-heap, name: "nm + daemon run", kind: check, budget_s: 3, timeout_s: 300, parser: nm, cost: 2}
+  misra:          {fn: misra, name: "forbidden calls", kind: check, budget_s: 30, timeout_s: 300, parser: cppcheck, cost: 5}
+  no-heap:        {fn: no-heap, name: "daemon symbols", kind: check, budget_s: 3, timeout_s: 300, parser: nm, cost: 2}
   unit-tests:     {fn: unit-tests, name: "virtual clock", kind: check, budget_s: 2, timeout_s: 300, parser: ctest, cost: 1, baseline: tests}
   property-tests: {fn: property-tests, name: "round trips", kind: check, budget_s: 2, timeout_s: 300, parser: ctest, cost: 1, baseline: tests}
-  sanitizers:     {fn: sanitizers, name: "ASan + UBSan", kind: check, budget_s: 20, timeout_s: 600, parser: sanitizer, cost: 6, baseline: tests}
+  sanitizers:     {fn: sanitizers, name: "UBSan", kind: check, budget_s: 20, timeout_s: 600, parser: sanitizer, cost: 6, baseline: tests}
   fuzz:           {fn: fuzz, name: "smoke", kind: check, budget_s: 90, timeout_s: 600, parser: sanitizer, cost: 9, env: {TS_FUZZ: "1"}}
   loopback:       {fn: loopback, name: "with budgets", kind: check, budget_s: 4, timeout_s: 300, parser: ctest, cost: 2, baseline: tests}
   budgets:        {fn: budgets, name: "codec, size, stack", kind: check, budget_s: 2, timeout_s: 300, parser: budget, cost: 2}

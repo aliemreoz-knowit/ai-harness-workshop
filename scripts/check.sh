@@ -23,14 +23,12 @@
 # to a host path the container cannot see); the result is handed to the
 # container in build-check/change/.
 #
-# Runs inside the dev container; when invoked on the host it re-executes itself
-# through scripts/dockerbuild.sh. Without a usable Docker (not installed, or
-# `docker info` fails or does not answer within 8 s) or with TS_LITE=1, the host
-# runs the Docker-free ladder instead: scripts/lite_gates.py (zig cc), same
-# result lines, and the gates it cannot run SKIP. TS_LITE=0 (the stage and the
-# central eval batches) never runs it: check.sh waits for `docker info` however
-# long it takes (the caller's timeout is the bound) and, when Docker does not
-# work, exits 2 without a result line. Every gate prints one line
+# On the host it runs the Docker-free ladder: scripts/lite_gates.py (zig cc), same
+# result lines; the gates it cannot run (fuzz, coverage) SKIP. Only TS_LITE=0 asks
+# for the dev container: check.sh then re-executes itself through
+# scripts/dockerbuild.sh, waits for `docker info` however long it takes (the
+# caller's timeout is the bound) and, when Docker does not work, exits 2 without
+# a result line. Every gate prints one line
 #     <gate> <PASS|FAIL|SKIP> <ms> (budget) <what it checks> [reason]
 # The old codes g0 .. g10 and dp still work as arguments (harness/names.py has the table).
 # and a summary at the end.
@@ -141,19 +139,13 @@ if [ "${TS_IN_CONTAINER:-0}" != "1" ] && [ ! -f /.dockerenv ]; then
         fi
         exec "$SCRIPT_DIR/dockerbuild.sh" scripts/check.sh "$@"
     fi
-    # Without a usable Docker (or with TS_LITE=1) the Docker-free ladder runs the gates it can
-    # (zig cc; the others SKIP "needs Docker (not run here)"), with the change context prepared above.
-    if [ "${TS_LITE:-0}" = "1" ] || ! docker_usable; then
-        if ! py="$(lite_python)"; then
-            echo "check.sh: Docker is not usable and no Python 3 was found for scripts/lite_gates.py" >&2
-            exit 2
-        fi
-        echo "check.sh: $([ "${TS_LITE:-0}" = "1" ] && echo "TS_LITE=1" || echo "no usable Docker"):" \
-             "the Docker-free ladder (scripts/lite_gates.py, zig cc)" >&2
-        cd "$REPO" || exit 2
-        exec "$py" scripts/lite_gates.py "$@"     # relative: a native Python cannot open a /c/... path
+    # Everything else: the Docker-free ladder (zig cc; fuzz and coverage SKIP), with the change context prepared above.
+    if ! py="$(lite_python)"; then
+        echo "check.sh: no Python 3 was found for scripts/lite_gates.py (run the setup)" >&2
+        exit 2
     fi
-    exec "$SCRIPT_DIR/dockerbuild.sh" scripts/check.sh "$@"
+    cd "$REPO" || exit 2
+    exec "$py" scripts/lite_gates.py "$@"     # relative: a native Python cannot open a /c/... path
 fi
 cd "$REPO" || exit 2
 

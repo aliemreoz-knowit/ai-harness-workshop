@@ -1,7 +1,7 @@
 $ python -m harness gates no-heap
 GATES FAIL (no-heap:FAIL)
-no-heap nm + daemon run: forbidden call referenced: malloc
+no-heap daemon symbols: forbidden call referenced: malloc
 - no-heap src/rate/rate.c [no-malloc:malloc] daemon object references forbidden call malloc()
-(host (Windows), 7654 ms)
+(host (Windows), 807 ms)
 
 [exit 1]

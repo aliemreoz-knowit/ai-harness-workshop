@@ -510,7 +510,7 @@ fi
 # --- 6. gates ----------------------------------------------------------------------------------------------------
 step 6 "gates (no Docker)"
 # Docker is never used: the gates run with the zig C compiler (the Docker-free ladder). The console reads the ladder
-# from .tools/ladder, once, at its start (a console started with TS_LITE=0, the stage, runs the full ladder anyway).
+# from .tools/ladder, once, at its start.
 LADDER=lite
 if [ "$CHECK" = 0 ] && mkdir -p "$ROOT/.tools" 2>/dev/null; then
     printf '%s\n' "$LADDER" > "$ROOT/.tools/ladder" 2>/dev/null || note "could not write .tools/ladder"

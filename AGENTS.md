@@ -70,14 +70,10 @@ builds without a CMake change; list every new test in
 
 ## Build and test (only through the scripts)
 
-The host has no compiler. Everything runs in the `tinystream-dev:latest`
-container through the scripts; on Windows run them from Git Bash with
-`MSYS_NO_PATHCONV=1`. Without Docker (not installed, or not running),
-`scripts/check.sh` runs the Docker-free ladder (`scripts/lite_gates.py`, zig
-cc): build, unit-tests, property-tests, loopback, budgets (codec budgets) and
-diff-policy run on the host and say `lite (zig)`; misra, no-heap, sanitizers,
-fuzz and coverage SKIP with `needs Docker (not run here)`.
-The container ladder stays the reference.
+Everything builds and runs through the scripts, with zig cc on the host (no
+Docker): `scripts/check.sh` runs the Docker-free ladder (`scripts/lite_gates.py`);
+on Windows run it from Git Bash with `MSYS_NO_PATHCONV=1`. Every gate says
+`lite (zig)`; fuzz and coverage SKIP (not run here).
 
 ```
 scripts/build.sh host                      # presets: host | asan | pi | coverage | fuzz
@@ -99,10 +95,10 @@ packages, never use the network (`curl`, `wget`, `ssh`, `gh`, `pip install`).
 | Gate | Checks |
 |---|---|
 | build | host + aarch64 build, warnings as errors |
-| misra | no ticket ids in source trees; cppcheck MISRA subset (canary first) |
-| no-heap | no allocating / process-creating call in daemon objects; daemon runs 1 s under the malloc guard |
+| misra | no ticket ids in source trees; MISRA forbidden calls 21.3 malloc/free, 21.6 stdio, 21.8 abort/exit/getenv, 21.21 system (canary first) |
+| no-heap | no allocating / process-creating call in daemon objects (symbols of the Pi build) |
 | unit-tests / property-tests | unit tests / property tests (virtual clock) |
-| sanitizers | every test under ASan + UBSan |
+| sanitizers | every test under UBSan |
 | fuzz | fuzz smoke (central harness only, may SKIP) |
 | loopback | loopback scenarios with budgets |
 | budgets | codec, size and stack budgets |

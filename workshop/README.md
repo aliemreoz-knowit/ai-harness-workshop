@@ -9,7 +9,7 @@ changes, the console shows. Open a terminal (Git Bash) in the repository root an
 
     source workshop/stage-shell.sh
 
-It takes the terminal into the copy and sets `TS_LITE=0`, `MSYS_NO_PATHCONV=1`, the repository's `.venv`, `WORKSHOP`
+It takes the terminal into the copy and sets `TS_LITE=1`, `MSYS_NO_PATHCONV=1`, the repository's `.venv`, `WORKSHOP`
 (this folder: the copy has no `workshop/` on a ticket branch, so a command names a patch as
 `"$WORKSHOP/patches/fault1-unused-variable.patch"`) and `HARNESS_HIDDEN_TESTS` (the root's `hidden-tests/`, which is never
 in the copy). The console gives its own commands the same folder and variables.

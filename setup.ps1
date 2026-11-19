@@ -720,7 +720,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $Root $monaco))) {
 # --- 6. gates ----------------------------------------------------------------------------------------------------
 Step 6 'gates (no Docker)'
 # Docker is never used: the gates run with the zig C compiler (the Docker-free ladder). The console reads the ladder
-# from .tools\ladder, once, at its start (a console started with TS_LITE=0, the stage, runs the full ladder anyway).
+# from .tools\ladder, once, at its start.
 $ladder = 'lite'
 if (-not $Check) {
     try {

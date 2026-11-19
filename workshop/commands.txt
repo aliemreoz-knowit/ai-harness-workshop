@@ -8,9 +8,9 @@
 # Code page shows it and its Today runs the (console) commands in it, so the terminals work there too: whatever the
 # stage changes, the console shows. Every terminal is GIT BASH, not PowerShell. Once per terminal, in the repository root:
 #     source workshop/stage-shell.sh
-# It goes into the copy and sets TS_LITE=0 MSYS_NO_PATHCONV=1, the .venv, WORKSHOP (the root's workshop/ folder: the copy
+# It goes into the copy and sets TS_LITE=1 MSYS_NO_PATHCONV=1, the .venv, WORKSHOP (the root's workshop/ folder: the copy
 # has none, so a patch or helper is "$WORKSHOP/...") and HARNESS_HIDDEN_TESTS (the referee, never in the copy).
-# Only these run in the root (there: export TS_LITE=0 MSYS_NO_PATHCONV=1 && source .venv/Scripts/activate): the console
+# Only these run in the root (there: export TS_LITE=1 MSYS_NO_PATHCONV=1 && source .venv/Scripts/activate): the console
 # server (tab 1) and the day before (setup, stage-unit.sh); the copy is on ticket/TS-104.
 # Commands marked (console) are on the console's Today page, section by section, with a Run button: the room sees the
 # command and its output there.
@@ -29,7 +29,7 @@ bash workshop/stage-unit.sh
 # afterwards: 19 branches; stage-unit prints "console copy on ticket/TS-104" and "19 workshop branches"
 
 # ==== 08:00 · T tab 1 · The stage console
-cd console && TS_LITE=0 ../.venv/Scripts/python -m console serve --personal --budget 60
+cd console && TS_LITE=1 ../.venv/Scripts/python -m console serve --personal --budget 150
 # browser: http://localhost:8765/   (Today: the day section by section, with the commands of each section and their Run buttons)
 # afterwards: the header says "… of 150 credits today"; the right pane of TS-104 holds only the empty template
 

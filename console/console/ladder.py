@@ -64,20 +64,15 @@ def image_exists() -> bool:
 
 
 def decide(root: Path, image_exists: Callable[[], bool] | None = None) -> tuple[str, str]:
-    """``(ladder, why)``: ``("full", "")``, ``("lite", "ts-lite")`` (``TS_LITE=1``), ``("lite", "no-docker")`` (marker)
-    or ``("lite", "no-image")``. Under ``TS_LITE=0`` or ``1`` nothing is read or asked; Docker is not asked when the
-    marker says lite."""
+    """``(ladder, why)``: ``("full", "")`` only under ``TS_LITE=0`` (the container ladder, asked for by name);
+    otherwise ``("lite", "ts-lite")`` (``TS_LITE=1``) or ``("lite", "no-docker")``: the workshop runs without Docker,
+    so Docker is never asked. ``image_exists`` is kept for callers that pass one; it is not called."""
     forced = os.environ.get("TS_LITE")
-    if forced == "0":  # the stage rule: never lite, whatever the marker says or Docker answers now
+    if forced == "0":  # the container ladder, asked for by name
         return "full", ""
     if forced == "1":  # the console was started in the Docker-free ladder: runs and Today agree
         return "lite", TS_LITE
-    if read_marker(root) == "lite":
-        return "lite", NO_DOCKER
-    ask = image_exists or globals()["image_exists"]  # looked up now: a test's monkeypatch of the module's reaches it
-    if ask():
-        return "full", ""
-    return "lite", NO_IMAGE
+    return "lite", NO_DOCKER
 
 
 def env(ladder: str) -> dict[str, str]:

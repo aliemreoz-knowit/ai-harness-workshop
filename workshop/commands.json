@@ -172,17 +172,17 @@
    {
     "id": "s29-5",
     "title": "No-heap gate",
-    "what": "Runs the no-heap gate: it checks the compiled daemon for allocating calls and runs it for a second under the malloc guard, in Docker.",
+    "what": "Runs the no-heap gate: it reads the symbols of every compiled daemon object (the Pi build) and fails on any allocating call.",
     "why": "A second check of the same rule, done another way. One rule, two independent gates.",
     "slide": 29,
     "slide_title": "Two faults on purpose: which gate catches each?",
     "at": "10:29",
     "cmd": "python -m harness gates no-heap",
     "interactive": false,
-    "expect": "GATES FAIL (no-heap:FAIL) … no-malloc:malloc  (about 10 s, Docker)",
+    "expect": "GATES FAIL (no-heap:FAIL) … no-malloc:malloc  (about 2 s)",
     "recorded": "recorded/day/s29-5.txt",
-    "recorded_at": "18 Nov 2026",
-    "recorded_took": "0:08",
+    "recorded_at": "19 Nov 2026",
+    "recorded_took": "0:01",
     "recorded_credits": "0.00"
    },
    {
@@ -238,17 +238,17 @@
    {
     "id": "s37-3",
     "title": "Misra gate",
-    "what": "Runs the misra gate (cppcheck with the MISRA subset) on the same change, then takes the change out again.",
+    "what": "Runs the misra gate (the forbidden calls of the MISRA subset) on the same change, then takes the change out again.",
     "why": "The third check that catches it, independent of the other two.",
     "slide": 37,
     "slide_title": "One prompt injection, caught three times",
     "at": "11:15",
     "cmd": "scripts/check.sh misra; git apply -R \"$WORKSHOP/patches/injected-change.patch\"",
     "interactive": false,
-    "expect": "misra FAIL … (5 s, Docker)",
+    "expect": "misra FAIL … rule 21.21, first src/net/daemon.c:59  (under 1 s)",
     "recorded": "recorded/day/s37-3.txt",
-    "recorded_at": "18 Nov 2026",
-    "recorded_took": "0:04",
+    "recorded_at": "19 Nov 2026",
+    "recorded_took": "0:01",
     "recorded_credits": "0.00"
    },
    {

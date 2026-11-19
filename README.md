@@ -196,9 +196,10 @@ set up with the command above. That recording is the stage's backup, and your re
 - Console, **Today**: every command of the day, section by section, in the order the stage showed them. Each one has
   **Recorded** (what it printed for us, how long it took, how many credits) and **Run** (runs it in the
   console's copy of this folder). That copy starts where the stage's does: on `ticket/TS-104`, where only TS-104 is open.
-- The gates run without Docker, built with zig on your laptop: the few that need Docker (misra, no-heap, sanitizers,
-  fuzz, coverage) say `not run here (needs Docker)`, and the held-back tests that judge each experiment run are built
-  with zig too (`hidden-tests/lite.py`). On the stage the same gates run in a Docker container.
+- The gates run without Docker, built with zig on your laptop, the same as on the stage: build, misra (ticket ids and
+  the forbidden calls of the MISRA subset), no-heap (the symbols of the daemon objects), the tests, UBSan, loopback and
+  budgets. Only fuzz and coverage say `not run here`, and the day does not use them. The held-back tests that judge each
+  experiment run are built with zig too (`hidden-tests/lite.py`).
 - The same recordings are in `workshop/recorded/day/`: `<id>.txt` per command, `index.json` with the times and
   credits, `results/` with the experiments' result files. `workshop/commands.txt` has every command in the order of
   the clock.
@@ -281,7 +282,7 @@ It downloads only these, and it sends no data anywhere:
 | **Tool, MCP** | A tool is something the agent can call: read a file, edit, run a command. An MCP server plugs another system in as a bundle of tools. Every tool costs tokens on every call and adds risk. |
 | **Gate** | A pass/fail check with no model in it: build, tests, static analysis, policy. Each gate has a short name, such as `build`, `misra`, `unit-tests` or `diff-policy`. |
 | **Gate ladder** | The gates in a fixed order, the ones without a build first. A failing gate is feedback for the agent, not an error. |
-| **Full ladder, lite ladder** | Every gate in the `tinystream-dev` Docker container, or the gates that need no Docker, built with zig on your laptop. A gate the lite ladder cannot run says `not run here (needs Docker)`: neither a pass nor a fail. |
+| **Lite ladder** | The gates without Docker, built with zig on your laptop, here and on the stage. A gate it cannot run (fuzz, coverage) says `not run here`: neither a pass nor a fail. The `tinystream-dev` container (`TS_LITE=0`) is not used in the workshop. |
 | **Retry budget** | How many gate-triggered attempts an agent gets before the harness escalates: to a stronger model, or to a person. |
 | **Role** | An agent with one job, its own prompt, model, tools and write scope: planner, implementer, test-writer, reviewer. |
 | **Guardrail** | A rule enforced in code, not asked of the model: tool permissions, protected paths, a shell deny list, the diff policy. |
@@ -337,7 +338,7 @@ First, run the setup again. It picks up where it stopped.
 | A card says `The run needs your approval`. | The workflow stopped at a step that waits for a person. Read the plan or the diff, then press **Approve** or **Reject (stops the run)**. Nothing is committed on reject. |
 | A save is refused with a sentence about a rule. | The file stays as it was. The sentence names the rule: a protected path, a read-only file, a file that cannot be created. Fix the line and save again. |
 | `A run is using your files. Save again when it has finished.` | Wait for the run, or stop it, then save again. |
-| `lite ladder: misra no-heap sanitizers coverage not run here (needs Docker)` | Not an error: those gates need Docker. |
+| `lite ladder: coverage not run here (needs Docker)` | Not an error: coverage (and fuzz) are not part of the Docker-free ladder, and the day does not use them. |
 | `The editor is not installed (run scripts/vendor_monaco.py): a plain text box is used.` | It works without it. Run the setup again later for the code editor. |
 | You want to stop the console. | Use the command the setup printed next to the address: `Stop-Process -Id <id>` on Windows, `kill <id>` on Linux and macOS. Or restart your laptop. |
 

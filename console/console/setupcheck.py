@@ -57,17 +57,14 @@ _COPILOT = {
 }  # fmt: skip
 _COPILOT_UNKNOWN = "Your Copilot login could not be checked: agent runs use the fake model (no credits)."
 _LADDERS = {
-    "full": "The gates run in Docker: the full ladder.",
-    "lite": "Docker is not running here: the gates run without it, and the gates that need Docker are not run here.",
+    "full": "The gates run in Docker: the container ladder (TS_LITE=0).",
+    "lite": "The gates run on this laptop without Docker (zig cc): build, misra, no-heap, tests, UBSan and the rest.",
 }
-_LITE_WHY = {  # a lite console (``console.ladder``): why, in the participant's words
-    ladders.TS_LITE: "The console was started with TS_LITE=1: the gates run the lite ladder (TS_LITE=1), and the gates "
-                     "that need Docker are not run here. Without TS_LITE=1 the console uses Docker when its image is "
-                     "there.",
-    ladders.NO_DOCKER: "This laptop was set up without Docker: the gates run the lite ladder, and the gates that need "
-                       "Docker are not run here. Run the setup again without --no-docker once Docker is installed.",
-    ladders.NO_IMAGE: "The tinystream-dev Docker image is not built: the gates run the lite ladder (no Docker image), "
-                      "and the gates that need Docker are not run here. Run the setup again to build it.",
+_LITE = "The gates run on this laptop without Docker (zig cc): build, misra, no-heap, tests, UBSan and the rest."
+_LITE_WHY = {  # a lite console (``console.ladder``): the same sentence whatever the why; nobody needs Docker
+    ladders.TS_LITE: _LITE,
+    ladders.NO_DOCKER: _LITE,
+    ladders.NO_IMAGE: _LITE,
 }  # fmt: skip
 _NO_ANSWER = "The setup check gave no answer: python -m harness doctor in your checkout says why."
 

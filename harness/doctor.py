@@ -249,15 +249,15 @@ def run_doctor(cfg: HarnessConfig, skip_auth: bool = False, env: dict[str, str] 
         # TS_LITE=0 (stage, central eval): check.sh waits for docker info and never runs lite
         lite_off = env.get("TS_LITE", "") == "0"
         usable, why = (envdetect.docker_usable(timeout=LITE_OFF_DOCKER_WAIT_S) if lite_off
-                       else envdetect.docker_usable())
+                       else (False, "no Docker needed"))   # only TS_LITE=0 asks for the container
         if not usable and lite_off:
             no_docker = True
             checks.append(Check("environment", FAIL, f"{why}: TS_LITE=0 never runs the Docker-free ladder, the "
                                                      "gates need Docker (start Docker Desktop)"))
         elif not usable:
             ladder = "lite"
-            checks.append(Check("environment", WARN, f"{why}: gates run the Docker-free ladder (scripts/lite_gates.py, "
-                                                     "zig cc); misra, no-heap, sanitizers, fuzz and coverage need Docker and SKIP"))
+            checks.append(Check("environment", OK, "gates run the Docker-free ladder (scripts/lite_gates.py, zig cc); "
+                                                   "fuzz and coverage are not part of it"))
         else:
             img = runner(["docker", "image", "inspect", e.image], capture_output=True, text=True)
             if img.returncode == 0:
