@@ -36,7 +36,7 @@ export const LEVELS = [
 ];
 
 const HARNESS_YAML = 'harness/harness.yaml';
-const COPY = "the console's copy of the checkout (.console-data/units/unit-01/repo)";
+const COPY = "the console's own copy of the repo (.console-data/units/unit-01/repo)";
 const code = (path) => `#/code?path=${path}`;
 
 export const AGENDA = [
@@ -134,7 +134,7 @@ export const AGENDA = [
         title: 'Write the agent-ready ticket',
         why: 'The same problem, told so that a gate can check every line of it.',
         where: { page: 'Tickets', part: 'Your version for the agent' },
-        how: `Open TS-104. In the right pane fill the nine parts: Context, Steps to reproduce, Inputs, Expected, Actual, Acceptance criteria, Acceptance tests, Out of scope, Definition of done. Write what can be observed; leave guesses about the cause out. On the stage a prepared version is pasted in. Save keeps it as tickets/TS-104.agent.md in ${COPY}.`,
+        how: `Open TS-104. In the right pane fill the nine parts: Context, Steps to reproduce, Inputs, Expected, Actual, Acceptance criteria, Acceptance tests, Out of scope, Definition of done. Write what can be observed; leave guesses about the cause out. On the stage a prepared version is pasted in. Save keeps it as tickets/TS-104.agent.md in ${COPY}, so your checkout stays as it is.`,
         action: { label: 'Open TS-104', to: '#/tickets/TS-104' },
         done: 'The ticket is saved, all nine parts are ticked, and Acceptance tests names every test that must pass.',
       },
