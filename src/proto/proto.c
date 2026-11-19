@@ -272,9 +272,7 @@ ts_err_t ts_nack_parse(const uint8_t *buf, size_t len, ts_nack_t *n)
     } else {
         const uint8_t count = buf[NACK_OFF_COUNT];
         const size_t need = (size_t)TS_NACK_HDR_LEN + ((size_t)TS_NACK_ENTRY_LEN * (size_t)count);
-        if ((uint32_t)count > TS_NACK_MAX) {
-            err = TS_E_INVAL;       /* never more than TS_NACK_MAX entries into n->e */
-        } else if (len < need) {
+        if (len < need) {
             err = TS_E_TRUNC;
         } else if (len != need) {
             err = TS_E_INVAL;

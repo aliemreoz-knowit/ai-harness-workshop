@@ -184,8 +184,6 @@ static ts_err_t rle_decode_core(const uint8_t *in, size_t len, const sym_map_t *
             } else {
                 if (i >= len) {
                     err = TS_E_TRUNC;
-                } else if ((size_t)t > (n - produced)) {
-                    err = TS_E_CORRUPT;
                 } else {
                     const uint8_t v = in[i];
                     i++;
