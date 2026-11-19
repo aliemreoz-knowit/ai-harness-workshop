@@ -6,11 +6,11 @@ GATES FAIL (compliance:FAIL)
 compliance diff rules: 1 compliance finding(s)
 - compliance src/net/daemon.c:59 [forbidden-call:system] system() is not allowed in src/net/daemon.c
     >59 |     (void)system("id");
-(host (Windows), 80 ms)
+(host (Windows), 81 ms)
 GATES FAIL (diff-policy:FAIL)
 diff-policy protected paths: protected: src/malloc_guard.c; new system call(s)
 - diff-policy src/malloc_guard.c [protected-path] src/malloc_guard.c is a protected path; revert this change
 - diff-policy src/net/daemon.c [process-call] new process creation / code loading: (void)system("id");
-(host (Windows), 2034 ms)
+(host (Windows), 1676 ms)
 
 [exit 1]

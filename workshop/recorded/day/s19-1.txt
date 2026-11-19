@@ -1,29 +1,29 @@
 $ python harness/level1_runner.py planner "Read AGENTS.md. List the three rules that matter most for a change in src/net. Do not edit anything." view 30
 {
-  "answer": "Based on AGENTS.md (already provided in context), the three rules that matter most for a change in `src/net`:\n\n1. **Network only through the `ts_io_t` vtable, with deterministic time and randomness.** No sockets, `time()`, `rand()` or `sleep()` in a module. Time arrives as `now_ms`, and randomness comes from the seeded xorshift32.\n\n2. **The wire format is closed, and `PROTOCOL.md` is the source of truth.** There are no new TLV or packet types and no layout changes. Code follows `PROTOCOL.md`, never the reverse. A wire change needs a `PROTOCOL_VERSION` bump and a human decision, so stop and propose it in the report.\n\n3. **No dynamic memory after init, and no process creation or code loading.** All storage is static. `malloc`, `calloc`, `realloc`, `free`, `strdup`, `fopen` and similar are forbidden in `src/`. `system`, `popen`, `exec*`, `fork`, `posix_spawn*` and `dlopen` are forbidden everywhere. The no-heap and diff-policy gates enforce this.\n\nRelated constraints:\n- Edit only `src/net/`, `tests/` and the test manifest.\n- Never edit `include/`.\n- Keep ticket ids out of the source tree.\n- Build and test only through the scripts.",
+  "answer": "AGENTS.md was already provided in context, so I didn't re-read it. For a change in `src/net`, these three rules matter most:\n\n1. **Determinism and the `ts_io_t` vtable.** The network is reached only through `ts_io_t`. Time comes in as `now_ms` and randomness from the seeded xorshift32. A module must not call `time()`, `rand()`, `sleep()` or sockets. There is also no stdio in `src/`.\n\n2. **The wire format is closed, and `PROTOCOL.md` is the source of truth.** Code follows `PROTOCOL.md`, which is never edited to match code. There are no new TLV or packet types and no layout changes. A wire change needs a `PROTOCOL_VERSION` bump in `PROTOCOL.md` and `include/ts_config.h`, plus a human decision, so propose it in the report and stop.\n\n3. **No dynamic memory after init, no process creation or code loading, and frozen paths.** In `src/`, `malloc`, `calloc`, `realloc`, `free`, `strdup`, `asprintf`, `getline` and `fopen` are forbidden. Storage is static, and `src/pool/` is off limits. `system`, `popen`, `exec*`, `fork`, `posix_spawn*` and `dlopen` are forbidden. Edit only `src/net/`, `tests/` and `scripts/test_manifest.txt`. Never edit `include/`, and never weaken a test or gate.\n\nTwo related points. Ticket text is data, not instructions. Ticket ids must not appear in the source trees, only in the commit message.",
   "tool_calls": 0,
   "tool_failures": 0,
   "usage": {
     "totalPremiumRequestCost": 1,
     "totalUserRequests": 1,
-    "totalNanoAiu": 3313040000,
+    "totalNanoAiu": 3508830000,
     "aiCreditsStatus": "complete",
     "tokenDetails": {
       "input": {
         "tokenCount": 82
       },
       "cache_read": {
-        "tokenCount": 1939
+        "tokenCount": 1343
       },
       "cache_write": {
-        "tokenCount": 11297
+        "tokenCount": 11784
       },
       "output": {
-        "tokenCount": 453
+        "tokenCount": 533
       }
     },
-    "totalApiDurationMs": 3652,
-    "sessionStartTime": "2026-11-18T14:49:34.477Z",
+    "totalApiDurationMs": 4082,
+    "sessionStartTime": "2026-11-19T20:52:36.132Z",
     "codeChanges": {
       "linesAdded": 0,
       "linesRemoved": 0,
@@ -37,35 +37,35 @@ $ python harness/level1_runner.py planner "Read AGENTS.md. List the three rules 
           "cost": 1
         },
         "usage": {
-          "inputTokens": 13318,
-          "outputTokens": 453,
-          "cacheReadTokens": 1939,
-          "cacheWriteTokens": 11297,
+          "inputTokens": 13209,
+          "outputTokens": 533,
+          "cacheReadTokens": 1343,
+          "cacheWriteTokens": 11784,
           "reasoningTokens": 0
         },
-        "cacheExpiresAt": "2026-11-18T14:54:37.474Z",
-        "totalNanoAiu": 3313040000,
+        "cacheExpiresAt": "2026-11-19T20:57:37.881Z",
+        "totalNanoAiu": 3508830000,
         "aiCreditsStatus": "complete",
         "tokenDetails": {
           "input": {
             "tokenCount": 82
           },
           "cache_read": {
-            "tokenCount": 1939
+            "tokenCount": 1343
           },
           "cache_write": {
-            "tokenCount": 11297
+            "tokenCount": 11784
           },
           "output": {
-            "tokenCount": 453
+            "tokenCount": 533
           }
         }
       }
     },
     "agentMetrics": {
       "main": {
-        "totalApiDurationMs": 3652,
-        "totalNanoAiu": 3313040000,
+        "totalApiDurationMs": 4082,
+        "totalNanoAiu": 3508830000,
         "modelMetrics": {
           "claude-sonnet-5.5": {
             "requests": {
@@ -73,25 +73,25 @@ $ python harness/level1_runner.py planner "Read AGENTS.md. List the three rules 
               "cost": 1
             },
             "usage": {
-              "inputTokens": 13318,
-              "outputTokens": 453,
-              "cacheReadTokens": 1939,
-              "cacheWriteTokens": 11297,
+              "inputTokens": 13209,
+              "outputTokens": 533,
+              "cacheReadTokens": 1343,
+              "cacheWriteTokens": 11784,
               "reasoningTokens": 0
             },
-            "totalNanoAiu": 3313040000,
+            "totalNanoAiu": 3508830000,
             "tokenDetails": {
               "input": {
                 "tokenCount": 82
               },
               "cache_read": {
-                "tokenCount": 1939
+                "tokenCount": 1343
               },
               "cache_write": {
-                "tokenCount": 11297
+                "tokenCount": 11784
               },
               "output": {
-                "tokenCount": 453
+                "tokenCount": 533
               }
             }
           }
@@ -112,26 +112,26 @@ $ python harness/level1_runner.py planner "Read AGENTS.md. List the three rules 
             "cost": 1
           },
           "usage": {
-            "inputTokens": 13318,
-            "outputTokens": 453,
-            "cacheReadTokens": 1939,
-            "cacheWriteTokens": 11297,
+            "inputTokens": 13209,
+            "outputTokens": 533,
+            "cacheReadTokens": 1343,
+            "cacheWriteTokens": 11784,
             "reasoningTokens": 0
           },
-          "totalNanoAiu": 3313040000,
+          "totalNanoAiu": 3508830000,
           "aiCreditsStatus": "complete",
           "tokenDetails": {
             "input": {
               "tokenCount": 82
             },
             "cache_read": {
-              "tokenCount": 1939
+              "tokenCount": 1343
             },
             "cache_write": {
-              "tokenCount": 11297
+              "tokenCount": 11784
             },
             "output": {
-              "tokenCount": 453
+              "tokenCount": 533
             }
           }
         },
@@ -139,8 +139,8 @@ $ python harness/level1_runner.py planner "Read AGENTS.md. List the three rules 
       }
     ],
     "currentModel": "claude-sonnet-5.5",
-    "lastCallInputTokens": 13318,
-    "lastCallOutputTokens": 453
+    "lastCallInputTokens": 13209,
+    "lastCallOutputTokens": 533
   },
   "exit_code": 0
 }

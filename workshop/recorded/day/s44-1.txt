@@ -1,36 +1,36 @@
 $ python -m harness experiment start --tickets TS-104,TS-107,TS-110 --only raw,cheap,team,team-small --repeats 2 --parallel 4 --experiment lunch-20261120
 [eval] experiment lunch-20261120: 24 runs (4 variants x 3 tickets), 0 already done, 24 to run, parallel 4
-[eval]   1/24 FAIL raw  TS-104   r1  status=completed credits=1.3648 interventions=1 retries=0 58.3s
-[eval]   2/24 FAIL raw  TS-104   r0  status=completed credits=1.4648 interventions=1 retries=0 63.9s
-[eval]   3/24 FAIL raw  TS-107   r1  status=completed credits=2.1071 interventions=1 retries=0 92.9s
-[eval]   4/24 FAIL raw  TS-107   r0  status=completed credits=3.4265 interventions=1 retries=0 129.2s
-[eval]   5/24 FAIL raw  TS-110   r0  status=failed credits=4.5441 interventions=1 retries=0 194.1s
-[eval]   6/24 PASS cheap TS-104   r0  status=completed credits=2.8646 interventions=2 retries=0 186.8s
-[eval]   7/24 FAIL raw  TS-110   r1  status=completed credits=5.4032 interventions=1 retries=0 236.0s
-[eval]   8/24 PASS cheap TS-104   r1  status=completed credits=2.9641 interventions=2 retries=0 189.6s
-[eval]   9/24 PASS cheap TS-110   r1  status=completed credits=3.9337 interventions=2 retries=0 259.2s
-[eval]  10/24 PASS cheap TS-107   r1  status=completed credits=6.961 interventions=2 retries=0 412.5s
-[eval]  11/24 PASS cheap TS-107   r0  status=budget_exceeded credits=8.2099 interventions=2 retries=0 448.3s
-[eval]  12/24 PASS cheap TS-110   r0  status=escalated credits=7.1948 interventions=2 retries=2 441.6s
-[eval]  13/24 PASS team TS-104   r0  status=completed credits=25.4913 interventions=2 retries=1 219.2s
-[eval]  14/24 PASS team TS-104   r1  status=completed credits=16.058 interventions=2 retries=0 193.5s
-[eval]  15/24 PASS team TS-110   r1  status=escalated credits=15.7884 interventions=2 retries=2 363.7s
-[eval]  16/24 PASS team TS-107   r1  status=completed credits=32.0137 interventions=2 retries=1 588.3s
-[eval]  17/24 PASS team TS-107   r0  status=budget_exceeded credits=41.4554 interventions=2 retries=1 670.8s
-[eval]  18/24 PASS team TS-110   r0  status=escalated credits=26.2152 interventions=2 retries=2 577.1s
-[eval]  19/24 FAIL team-small TS-104   r0  status=escalated credits=3.3401 interventions=2 retries=3 154.6s
-[eval]  20/24 PASS team-small TS-104   r1  status=completed credits=7.0408 interventions=2 retries=2 450.9s
-[eval]  21/24 PASS team-small TS-110   r0  status=escalated credits=14.1186 interventions=2 retries=4 848.3s
-[eval]  22/24 PASS team-small TS-110   r1  status=completed credits=7.1268 interventions=2 retries=2 482.1s
-[eval]  23/24 PASS team-small TS-107   r1  status=escalated credits=16.6006 interventions=2 retries=3 920.4s
-[eval]  24/24 PASS team-small TS-107   r0  status=completed credits=15.1202 interventions=2 retries=5 933.8s
+[eval]   1/24 FAIL raw  TS-107   r1  status=completed credits=1.6767 interventions=1 retries=0 72.5s
+[eval]   2/24 FAIL raw  TS-104   r0  status=completed credits=2.1671 interventions=1 retries=0 70.0s
+[eval]   3/24 PASS raw  TS-104   r1  status=completed credits=2.3613 interventions=1 retries=0 73.9s
+[eval]   4/24 FAIL raw  TS-107   r0  status=completed credits=2.3494 interventions=1 retries=0 97.6s
+[eval]   5/24 PASS cheap TS-104   r1  status=completed credits=3.1238 interventions=2 retries=0 165.1s
+[eval]   6/24 PASS cheap TS-104   r0  status=completed credits=3.3595 interventions=2 retries=0 181.4s
+[eval]   7/24 FAIL raw  TS-110   r0  status=failed credits=5.4675 interventions=1 retries=0 216.1s
+[eval]   8/24 PASS raw  TS-110   r1  status=completed credits=4.8911 interventions=1 retries=0 225.8s
+[eval]   9/24 FAIL cheap TS-110   r1  status=escalated credits=3.336 interventions=2 retries=3 151.6s
+[eval]  10/24 PASS cheap TS-110   r0  status=completed credits=4.3274 interventions=2 retries=0 220.9s
+[eval]  11/24 PASS cheap TS-107   r1  status=budget_exceeded credits=6.407 interventions=2 retries=0 291.2s
+[eval]  12/24 PASS cheap TS-107   r0  status=budget_exceeded credits=6.5945 interventions=2 retries=0 323.8s
+[eval]  13/24 PASS team TS-104   r0  status=completed credits=22.0395 interventions=2 retries=2 325.2s
+[eval]  14/24 PASS team TS-104   r1  status=completed credits=19.3961 interventions=2 retries=0 302.9s
+[eval]  15/24 PASS team TS-107   r0  status=completed credits=28.4579 interventions=2 retries=0 365.0s
+[eval]  16/24 PASS team TS-110   r1  status=completed credits=34.8267 interventions=2 retries=0 351.7s
+[eval]  17/24 PASS team TS-110   r0  status=completed credits=30.9933 interventions=2 retries=1 401.4s
+[eval]  18/24 PASS team-small TS-104   r0  status=completed credits=5.2593 interventions=2 retries=0 255.9s
+[eval]  19/24 PASS team TS-107   r1  status=completed credits=40.0895 interventions=2 retries=1 649.3s
+[eval]  20/24 PASS team-small TS-104   r1  status=completed credits=3.8716 interventions=2 retries=0 196.6s
+[eval]  21/24 PASS team-small TS-110   r0  status=completed credits=5.9674 interventions=2 retries=0 285.2s
+[eval]  22/24 PASS team-small TS-107   r1  status=completed credits=8.0491 interventions=2 retries=0 404.7s
+[eval]  23/24 PASS team-small TS-107   r0  status=escalated credits=9.2099 interventions=2 retries=2 444.3s
+[eval]  24/24 PASS team-small TS-110   r1  status=escalated credits=9.2441 interventions=2 retries=4 482.0s
 
 variant    runs      pass      95% CI    commit  credits interv retries   dur s gates review  label
 ---------------------------------------------------------------------------------------------------
-cheap         6   6/6  100%   61-100%   4/6   67%     5.35    2.0     0.3     323   0.5    4.0  cheap harness (small model only, trimmed planner, diff-only reviewer)
-team          6   6/6  100%   61-100%   3/6   50%    26.17    2.0     1.2     435   0.5    3.8  full team (4 roles)
-team-small    6   5/6   83%    44-97%   3/6   50%    10.56    2.0     3.2     632   0.7    3.8  team, all small model
-raw           6   0/6    0%     0-39%   5/6   83%     3.05    1.0     0.0     129   0.0      -  raw single agent (small model, no AGENTS.md, no gates, no retries)
+team-small    6   6/6  100%   61-100%   4/6   67%     6.93    2.0     1.0     345   0.2    3.3  team, all small model
+team          6   6/6  100%   61-100%   6/6  100%    29.30    2.0     0.7     399   0.0    4.0  full team (4 roles)
+cheap         6   5/6   83%    44-97%   3/6   50%     4.52    2.0     0.5     222   0.2    4.0  cheap harness (small model only, trimmed planner, diff-only reviewer)
+raw           6   2/6   33%    10-70%   5/6   83%     3.15    1.0     0.0     126   0.0      -  raw single agent (small model, no AGENTS.md, no gates, no retries)
 
 [eval] results: .console-data\units\unit-01\repo\results\lunch-20261120.jsonl
 [eval] board:   .console-data\units\unit-01\repo\results\results.json

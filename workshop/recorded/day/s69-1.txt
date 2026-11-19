@@ -1,13 +1,13 @@
 $ python -m harness run --workflow release-readiness --mode interactive
 [harness] runtime copilot-user: caps 15 AI credits per session, 60 per run (interactive mode)
 [harness] baseline: test gates unit-tests property-tests sanitizers loopback coverage on the untouched base
-[harness]   baseline unit-tests:PASS property-tests:PASS sanitizers:PASS loopback:PASS coverage:PASS -> rule the base is green: absolute gates
+[harness]   baseline unit-tests:PASS property-tests:PASS sanitizers:PASS loopback:PASS coverage:SKIP; lite ladder: coverage not run here -> rule the base is green: absolute gates
 [harness] step ladder (gates)
-[harness]   gates (harness): compliance:PASS style:PASS comments:PASS diff-size:PASS diff-policy:PASS build:PASS misra:PASS no-heap:PASS unit-tests:PASS property-tests:PASS sanitizers:PASS fuzz:PASS loopback:PASS budgets:PASS coverage:PASS
+[harness]   gates (harness): compliance:PASS style:PASS comments:PASS diff-size:PASS diff-policy:PASS build:PASS misra:PASS no-heap:PASS unit-tests:PASS property-tests:PASS sanitizers:PASS fuzz:SKIP loopback:PASS budgets:PASS coverage:SKIP; lite ladder: fuzz coverage not run here
 [harness] step release-note (agent, reviewer)
 [harness] step release-approval (approval)
 [harness] waiting for the console at release-approval: Approve this tree as the release candidate?
-[harness] run 20261118-164110-release-readiness-5054: done
-[harness] credits 3.63, interventions 1, retries 0, folder .console-data\units\unit-01\repo\.harness\runs\20261118-164110-release-readiness-5054
+[harness] run 20261119-223413-release-readiness-cede: done
+[harness] credits 3.70, interventions 1, retries 0, folder .console-data\units\unit-01\repo\.harness\runs\20261119-223413-release-readiness-cede
 
 [exit 0]

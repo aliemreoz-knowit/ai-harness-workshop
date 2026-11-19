@@ -1,12 +1,12 @@
 $ python -m harness gates build
 GATES FAIL (build:FAIL)
-build host + Pi: see build-check/harness/build.log
-- build src/rate/rate.c:32 [-Werror=unused-variable] unused variable 'demo_unused'
+build host + Pi: lite (zig): build failed, see build-check/harness/build.log
+- build src/rate/rate.c:32 [-Werror,-Wunused-variable] unused variable 'demo_unused'
      30 | void ts_bucket_set_rate(ts_bucket_t *b, uint32_t kbps)
      31 | {
     >32 |     int demo_unused = 0;
      33 |     if (b != NULL) {
      34 |         b->kbps = kbps;
-(host (Windows), 2148 ms)
+(host (Windows), 949 ms)
 
 [exit 1]
