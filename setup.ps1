@@ -1,22 +1,24 @@
 <#
 setup.ps1 -- the one setup command of the tinystream harness workshop (Windows).
 
-    powershell -ExecutionPolicy Bypass -File setup.ps1 [-Check] [-NoDocker] [-NoConsole]
+    powershell -ExecutionPolicy Bypass -File setup.ps1 [-Check] [-NoConsole]
 
 It works in the folder it sits in: a git clone, or an unzipped "Download ZIP". Running it again finishes what a
-stopped run left undone and changes nothing that works. It needs no admin rights and changes no system setting.
+stopped run left undone and changes nothing that works. It needs no admin rights and changes no system setting, and
+it needs nothing installed but Windows: when git is missing it brings a portable Git for Windows into .tools\git.
+Docker is never used: the gates run without it (the zig C compiler), so -NoDocker is accepted and changes nothing.
 Everything it makes stays in this folder (.venv, .tools, .console-data), with these exceptions: when the Copilot CLI
 is missing, winget installs it for your user only (and PowerShell 7, which its package needs, when that is
 missing too); when no Python 3.12 is there, uv keeps the one it fetches in
 %APPDATA%\uv and its cache in %LOCALAPPDATA%\uv\cache (the 260-character path limit of Windows rules out this folder
 for them); the download cache of pip and the compiler cache of zig (%LOCALAPPDATA%\zig) stay in your user profile.
 
-Network: PyPI (two pinned packages), GitHub (uv, only when no Python 3.12 is there, checked by SHA-256), winget
-(the Copilot CLI, only when missing), npm (the editor, checked by the console's own script), and the Docker image
-build. It sends no data anywhere.
+Network: PyPI (two pinned packages), GitHub (portable Git for Windows, only when git is missing; uv, only when no
+Python 3.12 is there; both checked by SHA-256; the workshop's branches, for a ZIP folder), winget (the Copilot CLI,
+only when missing) and npm (the editor, checked by the console's own script). It sends no data anywhere.
 
-The last line it prints is always "Depth: <depth>": Look, Try (fake model), Try (your Copilot),
-Full (fake model) or Full (your Copilot). The exit code is 1 for Look, otherwise 0.
+The last line it prints is always "Depth: <depth>": Look, Try (fake model) or Try (your Copilot). The exit
+code is 1 for Look, otherwise 0.
 Windows PowerShell 5.1: no PowerShell 7 syntax in here, and ASCII only (5.1 reads this file in the ANSI code page).
 #>
 param(
@@ -36,6 +38,13 @@ $SdkPin = 'github-copilot-sdk==1.0.23'
 $ZigPin = 'ziglang==0.16.0'
 $CopilotVersion = '1.0.100'
 $UvVersion = '0.13.5'
+$GitTag = 'v2.56.1.windows.1'
+$GitPortable = @{  # portable Git for Windows 2.56.1 when git is missing: the asset and its SHA-256, from the release
+    'AMD64' = @('PortableGit-2.56.1-64-bit.7z.exe', '9dd04a608ceb5f6ab32a73709e0ecb159d211da71b697c45ff81f6dd0c6b49c7')
+    'ARM64' = @('PortableGit-2.56.1-arm64.7z.exe', '0dca0d9f760924a7e6752235d7dd6eb1a9b508ee714b6ed15d89252e5a58c5c9')
+}
+$GitTimeout = 600
+$RepoUrl = 'https://github.com/aliemreoz-knowit/ai-harness-workshop.git'
 $UvSha256 = @{  # the SHA-256 of a uv 0.13.5 archive, from the release's sha256.sum
     'uv-x86_64-pc-windows-msvc.zip'  = 'a38b8d1902b7cfbc76b423ba1bb456f623f42064cdc72628b6075b89afd1019a'
     'uv-aarch64-pc-windows-msvc.zip' = '09f47edf90726084a70f9426f6e3ca4f46e9bf7cbf23b1716ec64d60b055fae3'
@@ -48,11 +57,11 @@ $MAX_ROOT = 135  # 259 characters per file path, minus the 121 the deepest file 
 $LimitedOut = ''
 
 function Show-Usage {
-    Write-Host 'Usage: powershell -ExecutionPolicy Bypass -File setup.ps1 [-Check] [-NoDocker] [-NoConsole]'
+    Write-Host 'Usage: powershell -ExecutionPolicy Bypass -File setup.ps1 [-Check] [-NoConsole]'
     Write-Host ''
     Write-Host '  -Check       only look: report what is there; install, download and start nothing'
-    Write-Host '  -NoDocker    do not build the tinystream-dev Docker image now'
     Write-Host '  -NoConsole   do not start the Harness Console'
+    Write-Host '  (-NoDocker is accepted and changes nothing: Docker is never used)'
     Write-Host ''
     Write-Host 'The last line is your depth, for example "Depth: Try (fake model)".'
 }
@@ -211,16 +220,78 @@ if ($Root.Length -gt $MAX_ROOT -and $longPaths -ne 1) {
 
 # --- 1. git ------------------------------------------------------------------------------------------------
 Step 1 'git'
+# git (and Git Bash, which the gates run in): the one on PATH, else a portable Git for Windows in .tools\git, which
+# this setup downloads when there is none. The console and the harness find .tools\git by themselves later.
+$LocalGit = Join-Path $Root '.tools\git'
+function Use-LocalGit {
+    # puts .tools\git\cmd first on this window's PATH (the console started below inherits it); $true when it is there
+    $exe = Join-Path $LocalGit 'cmd\git.exe'
+    if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { return $false }
+    $cmdDir = Join-Path $LocalGit 'cmd'
+    if (-not (($env:Path -split ';') -contains $cmdDir)) { $env:Path = "$cmdDir;$env:Path" }
+    return $true
+}
+function Get-PortableGit {
+    # downloads the portable Git for Windows into .tools\git; run only if its SHA-256 matches
+    $arch = $env:PROCESSOR_ARCHITECTURE
+    if ($env:PROCESSOR_ARCHITEW6432) { $arch = $env:PROCESSOR_ARCHITEW6432 }
+    $pin = $GitPortable[$arch]
+    if (-not $pin) {
+        Fail "there is no portable Git for $arch Windows: install Git for Windows (https://git-scm.com/downloads), then run the setup again."
+        return $false
+    }
+    $asset = $pin[0]
+    $url = "https://github.com/git-for-windows/git/releases/download/$GitTag/$asset"
+    $tools = Join-Path $Root '.tools'
+    $null = New-Item -ItemType Directory -Force -Path $tools
+    $part = Join-Path $tools "$asset.part"
+    Say "  git is missing: downloading a portable Git for Windows from GitHub (about 60 MB, once; no install, no admin)"
+    if (-not (Get-Download $url $part)) {
+        Remove-Item -LiteralPath $part -ErrorAction SilentlyContinue
+        Fail "could not download $url (network or proxy?). Run the setup again, or install Git for Windows yourself."
+        return $false
+    }
+    $got = Get-Sha256 $part
+    if ($got -ne $pin[1]) {
+        Remove-Item -LiteralPath $part -ErrorAction SilentlyContinue
+        Fail "the Git download has the wrong SHA-256 (got $got, want $($pin[1])): not running it."
+        return $false
+    }
+    $exe = Join-Path $tools $asset
+    Move-Item -LiteralPath $part -Destination $exe -Force
+    Remove-Item -LiteralPath $LocalGit -Recurse -Force -ErrorAction SilentlyContinue
+    Say '  unpacking it into .tools\git (a minute or two)'
+    # a self-extracting 7-Zip archive: -o<folder> unpacks there, -y answers every question, no window, no install
+    $code = Invoke-Limited $exe @("-o$LocalGit", '-y') $GitTimeout $tools
+    Remove-Item -LiteralPath $exe -ErrorAction SilentlyContinue
+    if ($code -ne 0 -or -not (Test-Path -LiteralPath (Join-Path $LocalGit 'cmd\git.exe') -PathType Leaf)) {
+        Fail "could not unpack the portable Git (exit code $code). Run the setup again, or install Git for Windows yourself."
+        return $false
+    }
+    return $true
+}
 $GitExe = $null
-$gitCmd = Get-Command git -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
 $gitVersion = ''
+$null = Use-LocalGit  # a portable Git from an earlier run comes first
+$gitCmd = Get-Command git -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($gitCmd) {
     $GitExe = $gitCmd.Source
     $gitVersion = (@(& $GitExe --version 2>$null) -join ' ').Trim()
     if ($LASTEXITCODE -ne 0) { $gitVersion = '' }
 }
+if (-not $gitVersion -and $Check) {
+    Note 'git is missing: the setup downloads a portable Git for Windows into .tools\git (about 60 MB)'
+    Finish 'Look' @('Run the setup without -Check: it brings git along.')
+}
 if (-not $gitVersion) {
-    Fail 'git is missing. Get Git for Windows from https://git-scm.com/downloads (it installs for your user too), then run the setup again.'
+    if ((Get-PortableGit) -and (Use-LocalGit)) {
+        $GitExe = Join-Path $LocalGit 'cmd\git.exe'
+        $gitVersion = (@(& $GitExe --version 2>$null) -join ' ').Trim()
+        if ($LASTEXITCODE -ne 0) { $gitVersion = '' }
+        if ($gitVersion) { Did "portable $gitVersion in .tools\git" }
+    }
+}
+if (-not $gitVersion) {
     Finish 'Look' @('The harness needs git: it commits your work and makes worktrees.')
 }
 Ok $gitVersion
@@ -273,6 +344,12 @@ if (-not $haveCommit -and -not $Check) {
 # the workshop's branches (ticket/TS-1xx: each ticket's start state for an experiment; after-section-1 .. after-section-5: the state
 # after each section): a clone from GitHub has them as origin/..., the experiments and the release run need them local
 if ($GitExe -and (Test-Path .git) -and -not $Check) {
+    $null = & $GitExe remote get-url origin 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        # an unzipped "Download ZIP" has no origin: the public repository is, read-only (nothing is ever pushed)
+        $null = & $GitExe remote add origin $RepoUrl 2>$null
+        if ($LASTEXITCODE -eq 0) { Did "origin: $RepoUrl (to fetch the workshop's branches)" }
+    }
     $null = & $GitExe remote get-url origin 2>$null
     if ($LASTEXITCODE -eq 0) {
         $null = & $GitExe fetch -q origin '+refs/heads/ticket/*:refs/remotes/origin/ticket/*' '+refs/heads/after-section-*:refs/remotes/origin/after-section-*' 2>$null
@@ -615,82 +692,18 @@ if (-not (Test-Path -LiteralPath (Join-Path $Root $monaco))) {
     }
 }
 
-# --- 6. Docker -----------------------------------------------------------------------------------------------------
-Step 6 'Docker (for the Full depth)'
-$dockerUp = $false
-$imageReady = $false
-function Find-GitBash {
-    # Git Bash (never C:\Windows\System32\bash.exe, which is WSL)
-    $roots = @()
-    $d = Split-Path -Parent $GitExe
-    for ($i = 0; $i -lt 3 -and $d; $i++) { $roots += $d; $d = Split-Path -Parent $d }
-    if ($env:ProgramFiles) { $roots += (Join-Path $env:ProgramFiles 'Git') }
-    if ($env:LOCALAPPDATA) { $roots += (Join-Path $env:LOCALAPPDATA 'Programs\Git') }
-    foreach ($r in $roots) {
-        foreach ($rel in @('bin\bash.exe', 'usr\bin\bash.exe')) {
-            $c = Join-Path $r $rel
-            if (Test-Path -LiteralPath $c -PathType Leaf) { return $c }
-        }
-    }
-    return $null
-}
-$dockerCmd = Get-Command docker -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
-if (-not $dockerCmd -and $env:ProgramFiles) {
-    # a window opened before Docker Desktop was installed has the old PATH: look where Docker Desktop puts it
-    $dockerBin = Join-Path $env:ProgramFiles 'Docker\Docker\resources\bin'
-    if (Test-Path -LiteralPath (Join-Path $dockerBin 'docker.exe') -PathType Leaf) {
-        $env:Path = "$env:Path;$dockerBin"
-        Note "Docker is not on this window's PATH, used anyway: $dockerBin (a new window has it)"
-        $dockerCmd = Get-Command docker -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
-    }
-}
-if (-not $dockerCmd) {
-    Note 'Docker is not installed: the gates run without it (Try depth).'
-} elseif ((Invoke-Limited $dockerCmd.Source @('info') 8 $Root) -ne 0) {
-    Note 'Docker is installed but does not answer (not running?): the gates run without it. Start Docker Desktop and run the setup again for the Full depth.'
-} else {
-    $dockerUp = $true
-    $null = & $dockerCmd.Source image inspect $Image 2>$null
-    if ($LASTEXITCODE -eq 0) { $imageReady = $true }
-    # Full depends on the image only: once it is there, a rerun builds nothing and cannot lower the depth
-    if ($imageReady) {
-        Ok "Docker runs and the $Image image is there"
-    } elseif ($NoDocker) {
-        Note "the $Image image is not built: skipped (-NoDocker)"
-    } elseif ($Check) {
-        Note "Docker runs: the setup builds the $Image image (about 1 GB to download)"
-    } else {
-        $bash = Find-GitBash
-        if (-not $bash) {
-            Note 'the Docker build needs Git Bash (part of Git for Windows): skipped'
-        } else {
-            Say "  Docker runs. Building the $Image image: about 1 GB to download and 3 GB on disk."
-            Say '  This takes several minutes (often 10 to 15), once. Later runs reuse the image.'
-            & $bash -c 'bash scripts/build.sh host </dev/null'
-            $buildCode = $LASTEXITCODE
-            $null = & $dockerCmd.Source image inspect $Image 2>$null
-            if ($LASTEXITCODE -eq 0) {
-                $imageReady = $true
-                if ($buildCode -eq 0) { Did "the $Image image is built" }
-                else { Note "the $Image image is built; compiling the code in it failed (see above). The gates will show it." }
-            } else {
-                Fail 'the Docker build failed (see above). You are at Try depth until it works: run the setup again to retry.'
-            }
-        }
-    }
-}
-
-# The ladder the harness and the console use from here on, recorded in .tools\ladder (rewritten on every run, so a rerun
-# without -NoDocker after installing Docker says "full"): "full" only when the image is there and Docker was not turned
-# off with -NoDocker; "lite" (zig, no Docker) otherwise. The console reads it once, at its start.
+# --- 6. gates ----------------------------------------------------------------------------------------------------
+Step 6 'gates (no Docker)'
+# Docker is never used: the gates run with the zig C compiler (the Docker-free ladder). The console reads the ladder
+# from .tools\ladder, once, at its start (a console started with TS_LITE=0, the stage, runs the full ladder anyway).
 $ladder = 'lite'
-if ($imageReady -and -not $NoDocker) { $ladder = 'full' }
 if (-not $Check) {
     try {
         $null = New-Item -ItemType Directory -Force -Path (Join-Path $Root '.tools')
         [System.IO.File]::WriteAllText((Join-Path $Root '.tools\ladder'), "$ladder`n", (New-Object System.Text.UTF8Encoding($false)))
     } catch { Note 'could not write .tools\ladder' }
 }
+Ok 'the gates run without Docker (no Docker needed)'
 
 # --- 7. doctor --------------------------------------------------------------------------------------------------------
 Step 7 'doctor'
@@ -702,13 +715,7 @@ if (-not $Pyx) {
     Fail 'the doctor needs Python 3.12 or newer'
     Finish 'Look' @('Run the setup without -Check: it gets Python 3.12.')
 }
-$hideDocker = $false
-if ($dockerUp -and $ladder -eq 'lite') {
-    # the doctor would start the image build itself (or undo -NoDocker): it checks the Docker-free ladder instead
-    if ($NoDocker) { Note '-NoDocker: the doctor checks the gates without Docker' }
-    else { Note "Docker runs but the $Image image is not built: the doctor checks the gates without Docker" }
-    $hideDocker = $true
-}
+$hideDocker = $true  # the doctor checks the Docker-free ladder, whatever Docker there is
 $Depth = ''
 function Invoke-Doctor([int]$Seconds, [string[]]$Extra, [bool]$Hide) {
     # sets $script:Depth from the doctor's "Depth:" line; prints the doctor's other lines
@@ -741,7 +748,6 @@ if ($Cli) {
 # no answer: once more without what can hang (the login check, the Docker probes), so it ends at Try, not at Look
 $retryWithout = @()
 if ($Cli) { $retryWithout += 'the login check' }
-if ($dockerUp -and -not $hideDocker) { $retryWithout += 'Docker' }
 if (-not $Depth -and $retryWithout.Count -gt 0) {
     Say "  once more, without $($retryWithout -join ' and '):"
     $hideDocker = $true
@@ -750,8 +756,8 @@ if (-not $Depth -and $retryWithout.Count -gt 0) {
 if (-not $Depth) {
     Finish 'Look' @('The doctor could not run, so the setup cannot tell what works here. Fix what the lines above say, or ask for help.')
 }
-# Full needs the image, and a doctor that saw Docker
-if ((-not $imageReady -or $hideDocker) -and $Depth -like 'Full*') { $Depth = 'Try' + $Depth.Substring(4) }
+# Full needs Docker, which the setup never uses
+if ($Depth -like 'Full*') { $Depth = 'Try' + $Depth.Substring(4) }
 $why = ''
 if ($pkgFailed) { $why = 'Some Python packages are missing: run the setup again when the network works.' }
 elseif ($Cli -and $Depth -like '*(fake model)') {

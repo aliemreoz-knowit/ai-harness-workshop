@@ -12,8 +12,8 @@ Here, the agent is what is under test.
 If you want, set it up on your own laptop ([Run it yourself](#run-it-yourself-optional-about-5-minutes)) and run each stage demo yourself as it happens.
 Afterwards it is here to read what you saw, to run it again, and to start on your own harness.
 
-**Reading this before the day?** There is nothing to prepare. If you want to follow along on your laptop, run the setup before the day:
-with Docker, its first image build takes 10 to 15 minutes. One thing helps: have one recurring task of your own team in mind, coding or not
+**Reading this before the day?** There is nothing to prepare. If you want to follow along on your laptop, you can run the setup
+before the day or during the kick-off: it takes about 5 minutes. One thing helps: have one recurring task of your own team in mind, coding or not
 (a kind of bug ticket, test-log triage, release notes, reviews), and keep asking what each part of the harness would look like for that task.
 
 **Jump to:**
@@ -110,15 +110,15 @@ It needs no admin rights and no Docker. Your own GitHub Copilot is optional: wit
 
 What you need:
 
-- A laptop with Windows, macOS or Linux.
-- git. The harness needs it: it commits your work and makes worktrees.
+- A laptop with Windows, macOS or Linux. A new laptop with only VS Code on it is enough.
+- You do not need git: on Windows the setup brings a portable Git for Windows along when there is none (about 60 MB,
+  no install). macOS and Linux usually have git; on a Mac without it, `xcode-select --install` first.
 - You do not need Python: if there is no Python 3.12 or newer, the setup gets one.
 
 ### 1. Get the folder
 
-Clone this repository with git (the green **Code** button gives its address), or download it: **Code > Download ZIP**, then unzip it.
-To follow the day (the Today page, the experiments, the release run) you need a clone: a ZIP has none of the workshop's
-branches, so it gets the console, Check my code and the gates only.
+Download it: **Code > Download ZIP**, then unzip it. Or clone it with git (the green **Code** button gives its address).
+Both work for the whole day: in a ZIP folder the setup fetches the workshop's branches from GitHub.
 
 - On Windows, keep the folder path short: at most 135 characters, for example `C:\Users\<you>\ws\tinystream`.
   Windows allows 260 characters for a file path, and the C compiler's files sit deep inside the folder.
@@ -146,28 +146,25 @@ Linux and macOS (and Git Bash on Windows):
 bash setup.sh
 ```
 
-- It takes about 5 minutes without Docker. With Docker running, the first image build adds 10 to 15 minutes.
+- It takes about 5 minutes, a minute or two more on Windows when it brings git along. It never uses Docker.
 - It needs no admin rights. It changes no system setting and no shell profile.
 - Run it again at any time. A second run changes nothing that works, and it finishes what a stopped run left.
 
 | Windows | Linux and macOS | What it does |
 |---|---|---|
 | `-Check` | `--check` | Only looks: it reports what is there and installs nothing. |
-| `-NoDocker` | `--no-docker` | Does not build the Docker image now. |
 | `-NoConsole` | `--no-console` | Does not start the Harness Console. |
 
 ### 3. Read the last line
 
 The last line is always `Depth: ...`. It says how much your laptop can run.
-There are three depths: **Look** (the setup could not finish), **Try** (everything that needs no Docker) and **Full** (with Docker).
+There are two depths: **Look** (the setup could not finish) and **Try** (everything, without Docker).
 
 | Last line | What you can run |
 |---|---|
 | `Depth: Look` | The setup could not finish. The lines above it say why. You can still read everything here on GitHub. |
-| `Depth: Try (fake model)` | The console, the harness and the gates that need no Docker. Agent runs use the fake model. |
+| `Depth: Try (fake model)` | The console, the harness and the gates. Agent runs use the fake model. |
 | `Depth: Try (your Copilot)` | The same, and agent runs use your own Copilot. |
-| `Depth: Full (fake model)` | Docker works too: every gate runs, in the `tinystream-dev` container. Agent runs use the fake model. |
-| `Depth: Full (your Copilot)` | Everything, with your own Copilot. |
 
 > [!TIP]
 > To move from "fake model" to "your Copilot": run the Copilot CLI command the setup prints in its last lines (the one in `.tools/copilot`), type `/login`, then run the setup again.
@@ -195,10 +192,11 @@ Every command the stage runs on the workshop day was also run once on 18 Nov 202
 set up with the command above. That recording is the stage's backup, and your reference when you run the same commands.
 
 - Console, **Today**: every command of the day, section by section, in the order the stage showed them. Each one has
-  **Show recorded result** (what it printed for us, how long it took, how many credits) and **Run** (runs it in the
+  **Recorded** (what it printed for us, how long it took, how many credits) and **Run** (runs it in the
   console's copy of this folder). That copy starts where the stage's does: on `ticket/TS-104`, where only TS-104 is open.
-- Without Docker the gates that need it say SKIP, and the held-back tests that judge each experiment run are built
-  with zig on your laptop (`hidden-tests/lite.py`). With Docker everything runs in the container, as on the stage.
+- The gates run without Docker, built with zig on your laptop: the few that need Docker (misra, no-heap, sanitizers,
+  fuzz, coverage) say `not run here (needs Docker)`, and the held-back tests that judge each experiment run are built
+  with zig too (`hidden-tests/lite.py`). On the stage the same gates run in a Docker container.
 - The same recordings are in `workshop/recorded/day/`: `<id>.txt` per command, `index.json` with the times and
   credits, `results/` with the experiments' result files. `workshop/commands.txt` has every command in the order of
   the clock.
@@ -265,7 +263,9 @@ It downloads only these, and it sends no data anywhere:
 - Only if no Python 3.12 or newer is there: `uv` 0.13.5 from GitHub (its SHA-256 is checked), which fetches Python 3.12.
 - Only if it is missing: the GitHub Copilot CLI (on Windows with winget, and PowerShell 7 with it if that is missing too).
 - The Monaco code editor for the console, from npm (checked).
-- Only with Docker: the `tinystream-dev` image build (about 1 GB to download, 3 GB on disk).
+- Only on Windows when git is missing: a portable Git for Windows 2.56.1 from GitHub (its SHA-256 is checked), unpacked
+  into `.tools/git`.
+- Only for a ZIP folder: the workshop's branches, fetched from this repository on GitHub.
 
 </details>
 
@@ -305,15 +305,12 @@ First, run the setup again. It picks up where it stopped.
 | `winget is not available on this computer`, then `the Copilot CLI is not installed, so you stay on the fake model.` | You are at Try (fake model), and that is fine. Later, install the CLI from https://gh.io/install-copilot-readme and run the setup again. |
 | `Depth: Try (fake model)`, but you have Copilot. | Run the Copilot CLI command the setup prints in its last lines, type `/login`, then run the setup again. |
 | `checking your Copilot login: this can take up to 5 minutes; please wait, do not close the window` | Wait. If the check does not answer, the setup tries once more without it. |
-| `Docker is installed but does not answer (not running?): the gates run without it.` | Start Docker (Docker Desktop on Windows) and run the setup again for the Full depth. Without Docker you are at Try, and that works. |
-| `Docker is not installed: the gates run without it (Try depth).` | Nothing to fix. Try depth has the lite ladder. |
-| You installed Docker Desktop, and the setup still says `Docker is not installed` or `does not answer`. | Start Docker Desktop once and wait for "Engine running", then open a new terminal and run the setup again. The setup looks in Docker Desktop's own folder, so a terminal opened before the install works too. |
 | `WARN  copilot cli   1.0.1xx at ... (pinned 1.0.100)` | The Copilot CLI updated itself when you started it. That is fine: the result still says `ready`. |
 | `WARN  repo trust    ... is not in trusted_folders` | Start `copilot` in this folder and, when it asks whether you trust the folder, choose the answer that remembers it. Without it the hooks in `.github/hooks` do not fire. |
 | Starting `copilot` here opens an Atlassian sign-in page in your browser. | Close it or decline. `.github/mcp.json` names Atlassian's Jira server as an example; the workshop reads its tickets from `tickets/` and needs no Jira. |
-| `the Docker build failed (see above). You are at Try depth until it works: run the setup again to retry.` | Run the setup again later. Until then you are at Try. |
 | `no Python 3.12 or newer with a venv module on PATH` | Nothing to do: the setup gets uv and lets it fetch Python 3.12. If that is blocked you see `there is no working Python 3.12 here.`: install Python 3.12 or newer from python.org ("for me only" on Windows), then run the setup again. |
-| `git is missing.` | Install git from https://git-scm.com/downloads (Git for Windows installs for your user too; on macOS, `xcode-select --install`), then run the setup again. |
+| `could not download ... PortableGit ...` or `could not unpack the portable Git` | A network or proxy problem: run the setup again. Or install Git for Windows yourself (https://git-scm.com/downloads, it installs for your user too) and run the setup again. |
+| `git is missing.` (macOS, Linux) | Install git (on macOS: `xcode-select --install`), then run the setup again. |
 | `pip could not install the packages` | A network or proxy problem, or on Windows a path that is too long. Run the setup again later: it retries. Behind a company proxy, set `HTTPS_PROXY` before you run the setup. |
 | `macOS: install a newer bash (brew install bash) so every gate runs; until then a check is skipped` | The full Docker-free ladder needs bash 4 or later. Run `brew install bash`, then run the setup again. With the bash that macOS ships (3.2), one check is skipped and agent runs stop before they finish. |
 | `Depth: Look` | Read the lines above it: each `FAIL` line says what to fix. Run the setup again. |

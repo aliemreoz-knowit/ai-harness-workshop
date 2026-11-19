@@ -11,10 +11,12 @@ import contextlib
 import dataclasses
 import logging
 import math
+import os
 import re
 import sys
 import time
 from http.server import ThreadingHTTPServer
+from pathlib import Path
 from typing import Mapping, Sequence
 
 from console import __version__, admin, doctor, ladder
@@ -293,7 +295,19 @@ def _budget(text: str) -> float:
     return value
 
 
+
+def _use_local_git() -> None:
+    """A portable Git for Windows the setup put in <checkout>/.tools/git (there was no git): first on PATH, so the
+    console, its runs and the harness find git, and Git Bash through it. Nothing when it is not there."""
+    cmd = Path(__file__).resolve().parents[2] / ".tools" / "git" / "cmd"
+    if os.name == "nt" and (cmd / "git.exe").is_file():
+        parts = os.environ.get("PATH", "").split(os.pathsep)
+        if str(cmd) not in parts:
+            os.environ["PATH"] = os.pathsep.join([str(cmd), *parts])
+
+
 def main(argv: Sequence[str] | None = None) -> int:
+    _use_local_git()
     args = build_parser().parse_args(argv)
     if args.command == "serve":
         return _serve(args)

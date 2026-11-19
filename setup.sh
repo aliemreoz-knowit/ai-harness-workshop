@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # setup.sh -- the one setup command of the tinystream harness workshop (Linux, macOS; on Windows in Git Bash too).
 #
-#   bash setup.sh [--check] [--no-docker] [--no-console]
+#   bash setup.sh [--check] [--no-console]
 #
 # It works in the folder it sits in: a git clone, or an unzipped "Download ZIP". Running it again finishes what
 # a stopped run left undone and changes nothing that works. It needs no admin rights and edits no shell profile.
@@ -9,11 +9,14 @@
 # missing, GitHub's install script puts it in ~/.local/bin; on Windows npm or winget installs it for your user) and the download cache of pip and the compiler cache of
 # zig (~/.cache/zig), which stay in your home folder.
 #
-# Network: PyPI (two pinned packages), GitHub (uv and the Copilot CLI, only when missing, checked by SHA-256),
-# npm (the editor, checked by the console's own script), and the Docker image build. It sends no data anywhere.
+# Docker is never used: the gates run without it (the zig C compiler), so --no-docker is accepted and changes nothing.
 #
-# The last line it prints is always "Depth: <depth>": Look, Try (fake model), Try (your Copilot),
-# Full (fake model) or Full (your Copilot). The exit code is 1 for Look, otherwise 0.
+# Network: PyPI (two pinned packages), GitHub (uv and the Copilot CLI, only when missing, checked by SHA-256; the
+# workshop's branches, for a ZIP folder) and npm (the editor, checked by the console's own script). It sends no data
+# anywhere.
+#
+# The last line it prints is always "Depth: <depth>": Look, Try (fake model) or Try (your Copilot). The exit code is
+# 1 for Look, otherwise 0.
 
 if [ -z "${BASH_VERSION:-}" ]; then exec bash "$0" "$@"; fi
 set -u
@@ -42,11 +45,11 @@ uv_sha256() {  # the SHA-256 of a uv 0.13.5 archive, from the release's sha256.s
 
 usage() {
     cat <<'EOF'
-Usage: bash setup.sh [--check] [--no-docker] [--no-console]
+Usage: bash setup.sh [--check] [--no-console]
 
   --check       only look: report what is there; install, download and start nothing
-  --no-docker   do not build the tinystream-dev Docker image now
   --no-console  do not start the Harness Console
+  (--no-docker is accepted and changes nothing: Docker is never used)
 
 The last line is your depth, for example "Depth: Try (fake model)".
 EOF
@@ -205,6 +208,11 @@ fi
 
 # the workshop's branches (ticket/TS-1xx: each ticket's start state for an experiment; after-section-1 .. after-section-5: the state
 # after each section): a clone from GitHub has them as origin/..., the experiments and the release run need them local
+if [ -e .git ] && [ "$CHECK" = 0 ] && ! git remote get-url origin >/dev/null 2>&1; then
+    # an unzipped "Download ZIP" has no origin: the public repository is, read-only (nothing is ever pushed)
+    git remote add origin "https://github.com/aliemreoz-knowit/ai-harness-workshop.git" 2>/dev/null &&
+        did "origin: https://github.com/aliemreoz-knowit/ai-harness-workshop.git (to fetch the workshop's branches)"
+fi
 if [ -e .git ] && [ -f workshop/branches.sh ] && git remote get-url origin >/dev/null 2>&1; then
     if out="$(bash workshop/branches.sh 2>&1)"; then did "$out"; else note "$out"; fi
 fi
@@ -499,55 +507,15 @@ else
     note "the editor could not be downloaded: the console uses a plain text box. Run the setup again later."
 fi
 
-# --- 6. Docker -----------------------------------------------------------------------------------------------------
-step 6 "Docker (for the Full depth)"
-DOCKER_UP=0
-IMAGE_READY=0
-DOCKER_OUT="$(mktemp 2>/dev/null || echo "${TMPDIR:-/tmp}/setup-docker.$$")"
-if ! command -v docker >/dev/null 2>&1; then
-    note "Docker is not installed: the gates run without it (Try depth)."
-elif ! run_limited 8 "$DOCKER_OUT" docker info; then
-    note "Docker is installed but does not answer (not running?): the gates run without it. Start Docker and run the setup again for the Full depth."
-else
-    DOCKER_UP=1
-    if docker image inspect "$IMAGE" >/dev/null 2>&1; then
-        IMAGE_READY=1
-    fi
-    # Full depends on the image only: once it is there, a rerun builds nothing and cannot lower the depth
-    if [ "$IMAGE_READY" = 1 ]; then
-        ok "Docker runs and the $IMAGE image is there"
-    elif [ "$NO_DOCKER" = 1 ]; then
-        note "the $IMAGE image is not built: skipped (--no-docker)"
-    elif [ "$CHECK" = 1 ]; then
-        note "Docker runs: the setup builds the $IMAGE image (about 1 GB to download)"
-    else
-        say "  Docker runs. Building the $IMAGE image: about 1 GB to download and 3 GB on disk."
-        say "  This takes several minutes (often 10 to 15), once. Later runs reuse the image."
-        bash scripts/build.sh host </dev/null
-        BUILD_RC=$?
-        if docker image inspect "$IMAGE" >/dev/null 2>&1; then
-            IMAGE_READY=1
-            if [ "$BUILD_RC" = 0 ]; then
-                did "the $IMAGE image is built"
-            else
-                note "the $IMAGE image is built; compiling the code in it failed (see above). The gates will show it."
-            fi
-        else
-            fail "the Docker build failed (see above). You are at Try depth until it works: run the setup again to retry."
-        fi
-    fi
-fi
-rm -f "$DOCKER_OUT"
-
-# The ladder the harness and the console use from here on, recorded in .tools/ladder (rewritten on every run, so a
-# rerun without --no-docker after installing Docker says "full"): "full" only when the image is there and Docker was
-# not turned off with --no-docker; "lite" (zig, no Docker) otherwise. The console reads it once, at its start.
+# --- 6. gates ----------------------------------------------------------------------------------------------------
+step 6 "gates (no Docker)"
+# Docker is never used: the gates run with the zig C compiler (the Docker-free ladder). The console reads the ladder
+# from .tools/ladder, once, at its start (a console started with TS_LITE=0, the stage, runs the full ladder anyway).
 LADDER=lite
-if [ "$IMAGE_READY" = 1 ] && [ "$NO_DOCKER" = 0 ]; then LADDER=full; fi
 if [ "$CHECK" = 0 ] && mkdir -p "$ROOT/.tools" 2>/dev/null; then
-    printf '%s
-' "$LADDER" > "$ROOT/.tools/ladder" 2>/dev/null || note "could not write .tools/ladder"
+    printf '%s\n' "$LADDER" > "$ROOT/.tools/ladder" 2>/dev/null || note "could not write .tools/ladder"
 fi
+ok "the gates run without Docker (no Docker needed)"
 
 # macOS ships bash 3.2; a check of the Docker-free ladder needs bash 4 or later and is skipped with an older one. The
 # bash it runs with is the harness's: HARNESS_BASH, else bash on PATH.
@@ -568,16 +536,7 @@ if [ -z "$PYX" ]; then
 fi
 DOCTOR_OUT="$(mktemp 2>/dev/null || echo "${TMPDIR:-/tmp}/setup-doctor.$$")"
 HIDE_DOCKER="DOCKER_HOST=unix:///nonexistent/tinystream-no-docker.sock"
-DOCTOR_ENV=""
-if [ "$DOCKER_UP" = 1 ] && [ "$LADDER" = lite ]; then
-    # the doctor would start the image build itself (or undo --no-docker): it checks the Docker-free ladder instead
-    if [ "$NO_DOCKER" = 1 ]; then
-        note "--no-docker: the doctor checks the gates without Docker"
-    else
-        note "Docker runs but the $IMAGE image is not built: the doctor checks the gates without Docker"
-    fi
-    DOCTOR_ENV="$HIDE_DOCKER"
-fi
+DOCTOR_ENV="$HIDE_DOCKER"  # the doctor checks the Docker-free ladder, whatever Docker there is
 DEPTH=""
 run_doctor() {  # run_doctor SECONDS [--skip-auth]: sets DEPTH from the doctor's "Depth:" line
     local secs="$1" rc
@@ -604,9 +563,6 @@ fi
 # no answer: once more without what can hang (the login check, the Docker probes), so it ends at Try, not at Look
 RETRY_WITHOUT=""
 [ -n "$CLI" ] && RETRY_WITHOUT="the login check"
-if [ "$DOCKER_UP" = 1 ] && [ -z "$DOCTOR_ENV" ]; then
-    RETRY_WITHOUT="${RETRY_WITHOUT:+$RETRY_WITHOUT and }Docker"
-fi
 if [ -z "$DEPTH" ] && [ -n "$RETRY_WITHOUT" ]; then
     say "  once more, without $RETRY_WITHOUT:"
     DOCTOR_ENV="$HIDE_DOCKER"
@@ -616,9 +572,7 @@ rm -f "$DOCTOR_OUT"
 if [ -z "$DEPTH" ]; then
     finish Look "The doctor could not run, so the setup cannot tell what works here. Fix what the lines above say, or ask for help."
 fi
-if [ "$IMAGE_READY" = 0 ] || [ -n "$DOCTOR_ENV" ]; then  # Full needs the image, and a doctor that saw Docker
-    case "$DEPTH" in Full*) DEPTH="Try${DEPTH#Full}" ;; esac
-fi
+case "$DEPTH" in Full*) DEPTH="Try${DEPTH#Full}" ;; esac  # Full needs Docker, which the setup never uses
 WHY=""
 if [ "$PKG_FAILED" = 1 ]; then
     WHY="Some Python packages are missing: run the setup again when the network works."

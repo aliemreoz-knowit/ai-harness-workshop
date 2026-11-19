@@ -34,7 +34,22 @@ def _call(target: str, argv: list[str]) -> int:
     return int(fn(argv) or 0)
 
 
+
+def _use_local_git() -> None:
+    """A portable Git for Windows the setup put in <checkout>/.tools/git (there was no git): first on PATH, so the
+    harness finds git, and Git Bash through it. Nothing when it is not there."""
+    import os
+    from pathlib import Path
+
+    cmd = Path(__file__).resolve().parents[1] / ".tools" / "git" / "cmd"
+    if os.name == "nt" and (cmd / "git.exe").is_file():
+        parts = os.environ.get("PATH", "").split(os.pathsep)
+        if str(cmd) not in parts:
+            os.environ["PATH"] = os.pathsep.join([str(cmd), *parts])
+
+
 def main(argv: list[str] | None = None) -> int:
+    _use_local_git()
     argv = list(sys.argv[1:] if argv is None else argv)
     if argv and argv[0] == "experiment":
         sub = argv[1] if len(argv) > 1 else ""
