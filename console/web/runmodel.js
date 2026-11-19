@@ -138,13 +138,13 @@ export function ticketChoices(paths, personal) {
   return [...ready, ...all.filter((path) => /(^|\/)[A-Z][A-Z0-9]*-\d+\.md$/.test(path))];
 }
 
-const LADDER_WORDS = { lite: 'gates without Docker (lite ladder)', full: 'gates in Docker (full ladder)' };
+const LADDER_WORDS = { lite: 'gates with zig (lite ladder)', full: 'gates in the container (full ladder)' };
 // A lite console says why: it was started with TS_LITE=1, the setup recorded "no Docker", or the image is not there
 // (`ladder_why` of GET /api/setup).
 const LITE_WHY_WORDS = {
   'ts-lite': 'lite ladder (TS_LITE=1)',
-  'no-docker': 'lite ladder (set up without Docker)',
-  'no-image': 'lite ladder (no Docker image)',
+  'no-docker': 'lite ladder (zig on this laptop)',
+  'no-image': 'lite ladder (zig on this laptop)',
 };
 
 /**
@@ -285,7 +285,7 @@ export function gateVerdict(matrix) {
   const here = ids.filter((id) => last.cells[id] === 'NOT_HERE').length;
   if (failed.length) return { text: `${failed.join(', ')} failed: ${passed} of ${total} gates passed`, tone: 'bad' };
   if (passed === total) return { text: `All ${total} gates passed`, tone: 'ok' };
-  if (passed + here === total) return { text: `${passed} of ${total} gates passed, ${here} not run here (they need Docker)`, tone: 'ok' };
+  if (passed + here === total) return { text: `${passed} of ${total} gates passed, ${here} not run here`, tone: 'ok' };
   return { text: `${passed} of ${total} gates passed, ${total - passed} skipped or not run`, tone: 'muted' };
 }
 

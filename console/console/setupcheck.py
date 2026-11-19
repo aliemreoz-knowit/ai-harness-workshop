@@ -57,10 +57,10 @@ _COPILOT = {
 }  # fmt: skip
 _COPILOT_UNKNOWN = "Your Copilot login could not be checked: agent runs use the fake model (no credits)."
 _LADDERS = {
-    "full": "The gates run in Docker: the container ladder (TS_LITE=0).",
-    "lite": "The gates run on this laptop without Docker (zig cc): build, misra, no-heap, tests, UBSan and the rest.",
+    "full": "The gates run in the container ladder (TS_LITE=0).",
+    "lite": "The gates run on this laptop with zig cc: build, misra, no-heap, tests, UBSan and the rest.",
 }
-_LITE = "The gates run on this laptop without Docker (zig cc): build, misra, no-heap, tests, UBSan and the rest."
+_LITE = "The gates run on this laptop with zig cc: build, misra, no-heap, tests, UBSan and the rest."
 _LITE_WHY = {  # a lite console (``console.ladder``): the same sentence whatever the why; nobody needs Docker
     ladders.TS_LITE: _LITE,
     ladders.NO_DOCKER: _LITE,

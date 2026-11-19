@@ -66,7 +66,7 @@ MANIFEST = Path("scripts/test_manifest.txt")
 STUB = "scripts/lite/cap_stub.c"
 CROSS = "aarch64-linux-gnu"
 LABEL = "lite (zig)"
-NEEDS_DOCKER = "needs Docker (not run here)"
+NEEDS_DOCKER = "not run here"
 GATE_TIMEOUT_S = 300              # every test of one gate (gates.yaml timeout_s)
 TEST_TIMEOUT_S = 120              # one test (CMakeLists.txt TIMEOUT)
 STEP_TIMEOUT_S = 600              # one compile, archive or link (the first link builds zig's libc)
@@ -110,7 +110,7 @@ EXES: list[tuple[str, tuple[str, ...], list[str], list[str], list[str]]] = [
      ["tsnetem_shim", "tsd", "tsproto"], []),
 ]
 WINDOWS_SKIP = ("not run on Windows: src/capture/capture.c needs POSIX file descriptors "
-                "(the container, Linux and macOS run it)")
+                "(Linux and macOS run it)")
 
 
 @dataclass
@@ -449,7 +449,7 @@ def manifest(label: str) -> list[str]:
 
 
 def header(ctx: Ctx, log: Callable[[str], None]) -> None:
-    log(f"{LABEL}: zig cc {ctx.zig_note} on {machine()} -- the Docker-free ladder")
+    log(f"{LABEL}: zig cc {ctx.zig_note} on {machine()}")
 
 
 def built(ctx: Ctx, log: Callable[[str], None], gid: str, plan: Plan | None = None) -> BuildResult | tuple[str, str]:
@@ -567,7 +567,7 @@ def g8(ctx: Ctx, log: Callable[[str], None]) -> tuple[str, str]:
         m = None
     if m and len(m.group(1)) > 2:
         ratio = f" ratio {m.group(1)[:-2]}.{m.group(1)[-2:]};"
-    return "PASS", f"{LABEL}: codec budgets only;{ratio} size and stack need Docker"
+    return "PASS", f"{LABEL}: codec budgets only;{ratio} size and stack are not checked here"
 
 
 # ---- misra: ticket ids and the forbidden-function rules of the subset, without cppcheck ------------------
@@ -813,7 +813,7 @@ def g10(ctx: Ctx, log: Callable[[str], None]) -> tuple[str, str]:
 
 
 def needs_docker(ctx: Ctx, log: Callable[[str], None]) -> tuple[str, str]:
-    log("libFuzzer and gcov are not part of the Docker-free ladder: this gate is not run")
+    log("libFuzzer and gcov are not part of the lite ladder: this gate is not run")
     return "SKIP", NEEDS_DOCKER
 
 
@@ -970,7 +970,7 @@ def main(argv: list[str]) -> int:
         print(f"{gid:<14} {status:<4} {ms:6d} ms (budget {budget:3d} s{over})  {NAMES[g]:<22} {reason}", flush=True)
     total = int((time.monotonic() - t_all) * 1000)
     print(f"---- ladder: {counts['PASS']} PASS, {counts['FAIL']} FAIL, {counts['SKIP']} SKIP in {total} ms "
-          f"(logs in {ctx.log_shown}) -- {LABEL}, no Docker")
+          f"(logs in {ctx.log_shown}) -- {LABEL}")
     return 1 if counts["FAIL"] else 0
 
 

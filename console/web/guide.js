@@ -70,7 +70,7 @@ export const AGENDA = [
         title: 'Check your setup',
         why: 'Know what this computer can run before anything starts.',
         where: { page: 'Today', part: 'Your setup' },
-        how: 'Read the Your setup box at the top of this page. It says whether agent runs use your Copilot login or only the scripted model, and whether the gates run in Docker (the full ladder) or without it (the lite ladder). "Check again" asks again.',
+        how: 'Read the Your setup box at the top of this page. It says whether agent runs use your Copilot login or only the scripted model, and that the gates run on your laptop with zig (the lite ladder). "Check again" asks again.',
         done: 'You can say which model and which ladder this computer uses.',
       },
       {

@@ -70,8 +70,8 @@ builds without a CMake change; list every new test in
 
 ## Build and test (only through the scripts)
 
-Everything builds and runs through the scripts, with zig cc on the host (no
-Docker): `scripts/check.sh` runs the Docker-free ladder (`scripts/lite_gates.py`);
+Everything builds and runs through the scripts, with zig cc on the host:
+`scripts/check.sh` runs the lite ladder (`scripts/lite_gates.py`);
 on Windows run it from Git Bash with `MSYS_NO_PATHCONV=1`. Every gate says
 `lite (zig)`; fuzz and coverage SKIP (not run here).
 
@@ -87,7 +87,7 @@ python -m harness gates style comments     # style + comments/docs of your chang
 python3 scripts/protocol_vectors.py        # only after an approved PROTOCOL.md change
 ```
 
-Never call `cmake`, `gcc`, `zig`, `docker` or `ctest` directly, never install
+Never call `cmake`, `gcc`, `zig` or `ctest` directly, never install
 packages, never use the network (`curl`, `wget`, `ssh`, `gh`, `pip install`).
 
 ## Gates (`scripts/check.sh`)

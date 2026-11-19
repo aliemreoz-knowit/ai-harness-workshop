@@ -40,7 +40,7 @@ from .config import HarnessConfig
 from .runtime import CopilotRuntime, copilot_env, env_passthrough, sdk_available, sdk_version
 
 OK, WARN, FAIL, SKIP = "OK", "WARN", "FAIL", "SKIP"
-LADDER = {"full": "full (Docker)", "lite": "lite (no Docker)"}     # the doctor --depth "Ladder:" line
+LADDER = {"full": "full (container)", "lite": "lite (zig)"}     # the doctor --depth "Ladder:" line
 LITE_OFF_DOCKER_WAIT_S = 60.0    # TS_LITE=0: how long the doctor waits for `docker info` (check.sh: no bound)
 
 
@@ -256,7 +256,7 @@ def run_doctor(cfg: HarnessConfig, skip_auth: bool = False, env: dict[str, str] 
                                                      "gates need Docker (start Docker Desktop)"))
         elif not usable:
             ladder = "lite"
-            checks.append(Check("environment", OK, "gates run the Docker-free ladder (scripts/lite_gates.py, zig cc); "
+            checks.append(Check("environment", OK, "gates run on this machine with zig cc (scripts/lite_gates.py); "
                                                    "fuzz and coverage are not part of it"))
         else:
             img = runner(["docker", "image", "inspect", e.image], capture_output=True, text=True)
@@ -287,12 +287,12 @@ def run_doctor(cfg: HarnessConfig, skip_auth: bool = False, env: dict[str, str] 
         except (OSError, subprocess.TimeoutExpired):
             zig = ""
         if not zig:
-            checks.append(Check("gates", FAIL, f"the Docker-free ladder needs zig: {sys.executable} -m pip install "
+            checks.append(Check("gates", FAIL, f"the gates need zig: {sys.executable} -m pip install "
                                                f"ziglang=={envdetect.ZIG_VERSION}"))
         elif zig == envdetect.ZIG_VERSION:
-            checks.append(Check("gates", OK, f"Docker-free ladder: zig {zig} via scripts/lite_gates.py"))
+            checks.append(Check("gates", OK, f"zig {zig} via scripts/lite_gates.py"))
         else:
-            checks.append(Check("gates", WARN, f"Docker-free ladder: zig {zig} (pinned {envdetect.ZIG_VERSION}) via "
+            checks.append(Check("gates", WARN, f"zig {zig} (pinned {envdetect.ZIG_VERSION}) via "
                                                "scripts/lite_gates.py"))
     else:
         probe_cmd = "command -v cmake && command -v ctest && command -v cppcheck && command -v gcovr"

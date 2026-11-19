@@ -24,7 +24,7 @@ from .envdetect import Environment
 
 # The SKIP reason of a gate the Docker-free ladder (scripts/lite_gates.py) cannot run: "not run here",
 # not a setup problem. Such a SKIP counts like fuzz's allowed SKIP, and the ladder names those gates.
-NOT_RUN_HERE = "needs Docker (not run here)"
+NOT_RUN_HERE = "not run here"
 
 # "unit-tests  FAIL    123 ms (budget   2 s OVER BUDGET)  unit                   reason"
 _LINE = re.compile(r"^(?P<id>[a-z][a-z0-9]*(?:-[a-z0-9]+)*|G\d+|diff-policy)\s+(?P<status>PASS|FAIL|SKIP)\s+(?P<ms>\d+) ms \(budget\s+(?P<budget>\d+) s"
@@ -121,7 +121,7 @@ class LadderResult:
     def lite_note(self) -> str:
         """'lite ladder: misra no-heap sanitizers coverage not run here (needs Docker)', or '' when every gate could run."""
         ids = [g.id for g in self.not_run_here]
-        return f"lite ladder: {' '.join(ids)} not run here (needs Docker)" if ids else ""
+        return f"lite ladder: {' '.join(ids)} not run here" if ids else ""
 
     @property
     def incomplete_only(self) -> bool:

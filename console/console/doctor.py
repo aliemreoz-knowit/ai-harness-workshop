@@ -210,8 +210,8 @@ def _check_docker(cfg: ConsoleConfig, probe: Probe) -> Check:
     if code == 0:
         version = re.search(r"Server Version:\s*(\S+)", out)
         return Check("docker", True, f"the engine answers (server {version[1]})" if version else "the engine answers")
-    if cfg.personal:   # the workshop runs without Docker: nothing to start
-        return Check("docker", True, "not needed: the gates run without Docker (zig cc)")
+    if cfg.personal:   # the workshop's gates run with zig cc: nothing to start
+        return Check("docker", True, "not needed: the gates run with zig cc")
     return Check(
         "docker", False, f"docker info failed ({_last_line(out)})",
         "start Docker Desktop and wait until it says it is running (install it first if it is missing)",
@@ -691,7 +691,7 @@ def _check_disk(cfg: ConsoleConfig, probe: Probe) -> Check:
         return Check("disk space", True, detail)
     return Check(
         "disk space", False, f"{detail}; at least {MIN_FREE_GB} GB are needed (clones, worktrees, build output, logs)",
-        "free some space (old exports and run logs; `docker system prune` for old images) or set data_dir in "
+        "free some space (old exports and run logs) or set data_dir in "
         "console.yaml to a bigger disk",
     )  # fmt: skip
 
@@ -711,7 +711,7 @@ _CHECKS: tuple[tuple[str, Callable[[ConsoleConfig, Probe], Check]], ...] = (
     ("lan addresses", _check_lan),
     ("disk space", _check_disk),
 )
-_ROOM_ONLY = frozenset({".env names", "firewall", "lan addresses"})  # personal mode: no .env, no room network
+_ROOM_ONLY = frozenset({".env names", "firewall", "lan addresses", "docker"})  # personal mode: no .env, no room network, no container
 
 
 def run_checks(cfg: ConsoleConfig, probe: Probe = default_probe) -> list[Check]:

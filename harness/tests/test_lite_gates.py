@@ -36,7 +36,7 @@ from .conftest import FakeCheck
 
 REPO = Path(__file__).resolve().parents[2]
 LITE = REPO / "scripts" / "lite_gates.py"
-NEEDS_DOCKER = "needs Docker (not run here)"
+NEEDS_DOCKER = "not run here"
 # what the lite build reads: the C tree, the test manifest and the lite scripts
 C_TREE = ("src", "include", "tests", "third_party", "tools/tsrecv", "tools/tsnetem")
 SCRIPTS = ("lite_gates.py", "lite", "test_manifest.txt")
@@ -294,14 +294,14 @@ def test_a_fast_ladder_with_lite_skips_passes_and_names_the_gates_not_run(cfg: H
     ladder = run_ladder(cfg, container_env, "fast", lite_skips("no-heap"))
     assert ladder.ok and not ladder.incomplete_only and ladder.skipped == []
     assert [g.id for g in ladder.not_run_here] == ["no-heap"]
-    assert ladder.lite_note() == "lite ladder: no-heap not run here (needs Docker)"
+    assert ladder.lite_note() == "lite ladder: no-heap not run here"
     assert ladder.summary() == ("compliance:PASS style:PASS comments:PASS diff-policy:PASS build:PASS no-heap:SKIP unit-tests:PASS property-tests:PASS; "
-                                "lite ladder: no-heap not run here (needs Docker)")
+                                "lite ladder: no-heap not run here")
     assert ladder.feedback().splitlines()[:2] == ["GATES PASS (compliance:PASS style:PASS comments:PASS diff-policy:PASS build:PASS no-heap:SKIP unit-tests:PASS property-tests:PASS)",
-                                                  "lite ladder: no-heap not run here (needs Docker)"]
+                                                  "lite ladder: no-heap not run here"]
     assert ladder.to_dict()["not_run_here"] == ["no-heap"] and ladder.to_dict()["ok"] is True
     full = run_ladder(cfg, container_env, "full", lite_skips("misra", "no-heap", "sanitizers", "coverage"))
-    assert full.ok and full.lite_note() == "lite ladder: misra no-heap sanitizers coverage not run here (needs Docker)"
+    assert full.ok and full.lite_note() == "lite ladder: misra no-heap sanitizers coverage not run here"
 
 
 def test_a_skip_with_another_reason_still_makes_the_ladder_incomplete(cfg: HarnessConfig,
@@ -313,7 +313,7 @@ def test_a_skip_with_another_reason_still_makes_the_ladder_incomplete(cfg: Harne
     skipped_lines = [ln for ln in fb.splitlines() if "SKIPPED" in ln]
     assert len(skipped_lines) == 1 and skipped_lines[0].startswith("unit-tests ")                # no-heap is not one of them
     assert skipped_lines[0].endswith(f": SKIPPED ({zig}) -- the ladder is incomplete")
-    assert "lite ladder: no-heap not run here (needs Docker)" in fb.splitlines()
+    assert "lite ladder: no-heap not run here" in fb.splitlines()
     plain = run_ladder(cfg, container_env, "fast", lite_skips(other={"diff-policy": "no git metadata"}))
     assert not plain.ok and plain.incomplete_only and plain.lite_note() == ""
     assert "lite ladder" not in plain.summary() + plain.feedback()
@@ -342,7 +342,7 @@ def test_a_run_with_lite_skips_ends_its_gates_step_without_a_human(cfg: HarnessC
     assert state.status == "done", state.data.get("stop_reason")
     assert state.counters.get("escalations", 0) == 0 and asked == [] and state.counters.get("retries", 0) == 0
     assert state.data["steps"]["solve"]["status"] == "done"
-    note = "lite ladder: no-heap not run here (needs Docker)"
+    note = "lite ladder: no-heap not run here"
     assert state.data["last_ladder"]["not_run_here"] == note
     assert any(note in line for line in out)
     summary = json.loads((state.dir / "summary.json").read_text(encoding="utf-8"))
@@ -382,7 +382,7 @@ def test_harness_run_fake_with_ts_lite_reaches_the_end_without_a_human(tmp_path:
     summary = json.loads((state.dir / "summary.json").read_text(encoding="utf-8"))
     assert rc == 0 and summary["status"] == "done", (summary, state.data.get("last_ladder"))
     assert summary["counters"].get("escalations", 0) == 0 and summary["steps"]["solve"] == "done"
-    assert summary["not_run_here"] == "lite ladder: no-heap not run here (needs Docker)"
+    assert summary["not_run_here"] == "lite ladder: no-heap not run here"
     assert state.data["branch"] and summary["commit"]
 
 
@@ -419,7 +419,7 @@ def test_doctor_without_docker_reports_the_lite_ladder(cfg: HarnessConfig, tmp_p
     r = doctor.run_doctor(cfg, skip_auth=True, env=host_env(tmp_path), runner=ok_runner)
     st = {c.name: c for c in r.checks}
     assert r.ladder == "lite" and st["environment"].status == "OK"
-    assert st["environment"].detail.startswith("gates run the Docker-free ladder")
+    assert st["environment"].detail.startswith("gates run on this machine with zig cc")
     assert st["gates"].status == "OK" and "zig 0.16.0" in st["gates"].detail
     assert r.to_dict()["ladder"] == "lite" and r.to_dict()["depth"] == "Try (fake model)"
     no_zig = lambda cmd, **kw: subprocess.CompletedProcess(cmd, 1, "", "No module named ziglang")
@@ -444,7 +444,7 @@ def test_doctor_under_ts_lite_0_never_reports_the_lite_ladder(cfg: HarnessConfig
     monkeypatch.setattr(envdetect, "docker_usable", answers)
     env = dict(host_env(tmp_path), TS_LITE="0")
     r = doctor.run_doctor(cfg, skip_auth=True, env=env, runner=ok_runner)
-    assert r.ladder == "full" and doctor.LADDER[r.ladder] == "full (Docker)"
+    assert r.ladder == "full" and doctor.LADDER[r.ladder] == "full (container)"
     assert doctor.depth(r) == "Full (fake model)" and waits and waits[-1] > 8.0
     monkeypatch.setattr(envdetect, "docker_usable", lambda timeout=8.0: (False, "Docker installed but not running"))
     r = doctor.run_doctor(cfg, skip_auth=True, env=env, runner=ok_runner)
@@ -476,14 +476,14 @@ def test_doctor_depth_flag_prints_the_two_lines_and_exits_0(repo: Path, tmp_path
     monkeypatch.setattr(envdetect, "docker_usable", lambda timeout=8.0: (False, "Docker not installed"))
     assert cli.main(["--repo", str(repo), "doctor", "--depth", "--skip-auth"]) == 0
     lines = capsys.readouterr().out.splitlines()
-    assert "Depth: Try (fake model)" in lines and "Ladder: lite (no Docker)" in lines
-    assert lines[-2:] == ["Depth: Try (fake model)", "Ladder: lite (no Docker)"]
+    assert "Depth: Try (fake model)" in lines and "Ladder: lite (zig)" in lines
+    assert lines[-2:] == ["Depth: Try (fake model)", "Ladder: lite (zig)"]
     assert cli.main(["--repo", str(repo), "doctor", "--skip-auth"]) == 1        # without --depth: the usual exit
     assert not any(ln.startswith(("Depth:", "Ladder:")) for ln in capsys.readouterr().out.splitlines())
     # with Docker (a report as run_doctor makes it; the real probe would start the container)
     monkeypatch.setattr(doctor, "run_doctor", lambda cfg, skip_auth=False: report("OK", "full"))
     assert cli.main(["--repo", str(repo), "doctor", "--depth", "--skip-auth"]) == 0
-    assert capsys.readouterr().out.splitlines()[-2:] == ["Depth: Full (your Copilot)", "Ladder: full (Docker)"]
+    assert capsys.readouterr().out.splitlines()[-2:] == ["Depth: Full (your Copilot)", "Ladder: full (container)"]
 
 
 # ------------------------------------------------- where the setup puts the CLI ----

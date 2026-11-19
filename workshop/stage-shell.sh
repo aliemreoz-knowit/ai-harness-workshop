@@ -10,7 +10,7 @@
 # typed here changes, the console shows too: one place for the whole stage. It sets what the commands need there, the
 # same as the console gives its own commands (console/console/workshop.py):
 #
-#   TS_LITE=1  MSYS_NO_PATHCONV=1   the Docker-free ladder (zig cc), Docker hidden; Git Bash leaves the arguments alone
+#   TS_LITE=1  MSYS_NO_PATHCONV=1   the lite ladder (zig cc); Git Bash leaves the arguments alone
 #   PATH                            this repository's .venv first: python is the venv's
 #   WORKSHOP                        this repository's workshop/ folder: the patches, day-numbers.py ...
 #                                   (the copy has no workshop/ on a ticket branch)
@@ -31,10 +31,6 @@ if [ ! -d "$_ts_here/.console-data/units/unit-01/repo" ]; then
     return 1
 fi
 export TS_LITE=1 MSYS_NO_PATHCONV=1 TS_ROOT="$_ts_root" WORKSHOP="$_ts_root/workshop"
-case "$(uname -s)" in          # as the console does: no command reaches for Docker (console/console/ladder.py)
-    MINGW*|MSYS*|CYGWIN*) export DOCKER_HOST="npipe:////./pipe/tinystream_no_docker" ;;
-    *) export DOCKER_HOST="unix:///nonexistent/tinystream-no-docker.sock" ;;
-esac
 if [ -f "$_ts_here/hidden-tests/run.sh" ]; then export HARNESS_HIDDEN_TESTS="$_ts_root/hidden-tests"; fi
 for _ts_venv in "$_ts_here/.venv/Scripts" "$_ts_here/.venv/bin"; do
     if [ -d "$_ts_venv" ]; then

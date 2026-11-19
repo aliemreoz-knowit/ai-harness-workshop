@@ -6,7 +6,7 @@ setup.ps1 -- the one setup command of the tinystream harness workshop (Windows).
 It works in the folder it sits in: a git clone, or an unzipped "Download ZIP". Running it again finishes what a
 stopped run left undone and changes nothing that works. It needs no admin rights and changes no system setting, and
 it needs nothing installed but Windows: when git is missing it brings a portable Git for Windows into .tools\git.
-Docker is never used: the gates run without it (the zig C compiler), so -NoDocker is accepted and changes nothing.
+The gates are built with the zig C compiler on this laptop; -NoDocker is accepted and changes nothing.
 Everything it makes stays in this folder (.venv, .tools, .console-data), with these exceptions: when the Copilot CLI
 is missing, winget installs it for your user only (and PowerShell 7, which its package needs, when that is
 missing too); when no Python 3.12 is there, uv keeps the one it fetches in
@@ -62,7 +62,7 @@ function Show-Usage {
     Write-Host ''
     Write-Host '  -Check       only look: report what is there; install, download and start nothing'
     Write-Host '  -NoConsole   do not start the Harness Console'
-    Write-Host '  (-NoDocker is accepted and changes nothing: Docker is never used)'
+    Write-Host '  (-NoDocker is accepted and changes nothing)'
     Write-Host ''
     Write-Host 'The last line is your depth, for example "Depth: Try (fake model)".'
 }
@@ -718,7 +718,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $Root $monaco))) {
 }
 
 # --- 6. gates ----------------------------------------------------------------------------------------------------
-Step 6 'gates (no Docker)'
+Step 6 'gates'
 # Docker is never used: the gates run with the zig C compiler (the Docker-free ladder). The console reads the ladder
 # from .tools\ladder, once, at its start.
 $ladder = 'lite'
@@ -728,7 +728,7 @@ if (-not $Check) {
         [System.IO.File]::WriteAllText((Join-Path $Root '.tools\ladder'), "$ladder`n", (New-Object System.Text.UTF8Encoding($false)))
     } catch { Note 'could not write .tools\ladder' }
 }
-Ok 'the gates run without Docker (no Docker needed)'
+Ok 'the gates run on this laptop with the zig C compiler'
 
 # --- 7. doctor --------------------------------------------------------------------------------------------------------
 Step 7 'doctor'

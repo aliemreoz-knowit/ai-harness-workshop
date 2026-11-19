@@ -1,12 +1,11 @@
 ---
 name: build-and-test
-description: Build tinystream and run its tests through the repository scripts (the dev container), pick the right preset and ctest label, and register a new test. Use for every build or test run; never call cmake, gcc, ctest or docker directly.
+description: Build tinystream and run its tests through the repository scripts (zig cc), pick the right preset and ctest label, and register a new test. Use for every build or test run; never call cmake, gcc, zig or ctest directly.
 ---
 
 # Build and test
 
-Everything builds and runs through `scripts/`, with zig cc on the host (no
-Docker); on Windows run them from Git Bash with `MSYS_NO_PATHCONV=1`.
+Everything builds and runs through `scripts/`, with zig cc on the host; on Windows run them from Git Bash with `MSYS_NO_PATHCONV=1`.
 
 ```
 scripts/build.sh host                    # configure + build a preset

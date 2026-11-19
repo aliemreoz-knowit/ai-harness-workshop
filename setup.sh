@@ -49,7 +49,7 @@ Usage: bash setup.sh [--check] [--no-console]
 
   --check       only look: report what is there; install, download and start nothing
   --no-console  do not start the Harness Console
-  (--no-docker is accepted and changes nothing: Docker is never used)
+  (--no-docker is accepted and changes nothing)
 
 The last line is your depth, for example "Depth: Try (fake model)".
 EOF
@@ -508,14 +508,14 @@ else
 fi
 
 # --- 6. gates ----------------------------------------------------------------------------------------------------
-step 6 "gates (no Docker)"
+step 6 "gates"
 # Docker is never used: the gates run with the zig C compiler (the Docker-free ladder). The console reads the ladder
 # from .tools/ladder, once, at its start.
 LADDER=lite
 if [ "$CHECK" = 0 ] && mkdir -p "$ROOT/.tools" 2>/dev/null; then
     printf '%s\n' "$LADDER" > "$ROOT/.tools/ladder" 2>/dev/null || note "could not write .tools/ladder"
 fi
-ok "the gates run without Docker (no Docker needed)"
+ok "the gates run on this laptop with the zig C compiler"
 
 # macOS ships bash 3.2; a check of the Docker-free ladder needs bash 4 or later and is skipped with an older one. The
 # bash it runs with is the harness's: HARNESS_BASH, else bash on PATH.

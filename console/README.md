@@ -32,9 +32,8 @@ back. One console runs per checkout: a second start prints the address of the on
 
 ## The ladder line
 
-The top of the Today page says which gate ladder the console uses, decided once when it starts: the full ladder runs
-the gates in Docker; the lite ladder runs them without Docker, and the gates that need Docker are not run. The setup
-records its choice; `TS_LITE=1` in the console's environment forces lite, `TS_LITE=0` never picks it.
+The top of the Today page says which gate ladder the console uses: the lite ladder, built with zig on this
+laptop. Only `TS_LITE=0` in the console's environment picks the container ladder, which the workshop does not use.
 
 ## Credits
 

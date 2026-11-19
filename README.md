@@ -106,7 +106,7 @@ Different agents, the same thirteen boxes.
 ## Run it yourself (optional, about 5 minutes)
 
 You get the folder, run one command, and open a web page on your own laptop: the Harness Console.
-It needs no admin rights and no Docker. Your own GitHub Copilot is optional: without it, agent runs use a scripted fake model.
+It needs no admin rights. Your own GitHub Copilot is optional: without it, agent runs use a scripted fake model.
 
 What you need:
 
@@ -148,7 +148,7 @@ Linux and macOS (and Git Bash on Windows):
 bash setup.sh
 ```
 
-- It takes about 5 minutes, a minute or two more on Windows when it brings git along. It never uses Docker.
+- It takes about 5 minutes, a minute or two more on Windows when it brings git along.
 - It needs no admin rights. It changes no system setting and no shell profile.
 - Run it again at any time. A second run changes nothing that works, and it finishes what a stopped run left.
 
@@ -160,7 +160,7 @@ bash setup.sh
 ### 3. Read the last line
 
 The last line is always `Depth: ...`. It says how much your laptop can run.
-There are two depths: **Look** (the setup could not finish) and **Try** (everything, without Docker).
+There are two depths: **Look** (the setup could not finish) and **Try** (everything).
 
 | Last line | What you can run |
 |---|---|
@@ -196,7 +196,7 @@ set up with the command above. That recording is the stage's backup, and your re
 - Console, **Today**: every command of the day, section by section, in the order the stage showed them. Each one has
   **Recorded** (what it printed for us, how long it took, how many credits) and **Run** (runs it in the
   console's copy of this folder). That copy starts where the stage's does: on `ticket/TS-104`, where only TS-104 is open.
-- The gates run without Docker, built with zig on your laptop, the same as on the stage: build, misra (ticket ids and
+- The gates are built with zig on your laptop, the same as on the stage: build, misra (ticket ids and
   the forbidden calls of the MISRA subset), no-heap (the symbols of the daemon objects), the tests, UBSan, loopback and
   budgets. Only fuzz and coverage say `not run here`, and the day does not use them. The held-back tests that judge each
   experiment run are built with zig too (`hidden-tests/lite.py`).
@@ -282,7 +282,7 @@ It downloads only these, and it sends no data anywhere:
 | **Tool, MCP** | A tool is something the agent can call: read a file, edit, run a command. An MCP server plugs another system in as a bundle of tools. Every tool costs tokens on every call and adds risk. |
 | **Gate** | A pass/fail check with no model in it: build, tests, static analysis, policy. Each gate has a short name, such as `build`, `misra`, `unit-tests` or `diff-policy`. |
 | **Gate ladder** | The gates in a fixed order, the ones without a build first. A failing gate is feedback for the agent, not an error. |
-| **Lite ladder** | The gates without Docker, built with zig on your laptop, here and on the stage. A gate it cannot run (fuzz, coverage) says `not run here`: neither a pass nor a fail. The `tinystream-dev` container (`TS_LITE=0`) is not used in the workshop. |
+| **Lite ladder** | The gates built with zig on your laptop, here and on the stage. A gate it cannot run (fuzz, coverage) says `not run here`: neither a pass nor a fail. The `tinystream-dev` container (`TS_LITE=0`) is not used in the workshop. |
 | **Retry budget** | How many gate-triggered attempts an agent gets before the harness escalates: to a stronger model, or to a person. |
 | **Role** | An agent with one job, its own prompt, model, tools and write scope: planner, implementer, test-writer, reviewer. |
 | **Guardrail** | A rule enforced in code, not asked of the model: tool permissions, protected paths, a shell deny list, the diff policy. |
@@ -316,7 +316,7 @@ First, run the setup again. It picks up where it stopped.
 | `could not download ... PortableGit ...` or `could not unpack the portable Git` | A network or proxy problem: run the setup again. Or install Git for Windows yourself (https://git-scm.com/downloads, it installs for your user too) and run the setup again. |
 | `git is missing.` (macOS, Linux) | Install git (on macOS: `xcode-select --install`), then run the setup again. |
 | `pip could not install the packages` | A network or proxy problem, or on Windows a path that is too long. Run the setup again later: it retries. Behind a company proxy, set `HTTPS_PROXY` before you run the setup. |
-| `macOS: install a newer bash (brew install bash) so every gate runs; until then a check is skipped` | The full Docker-free ladder needs bash 4 or later. Run `brew install bash`, then run the setup again. With the bash that macOS ships (3.2), one check is skipped and agent runs stop before they finish. |
+| `macOS: install a newer bash (brew install bash) so every gate runs; until then a check is skipped` | The full lite ladder needs bash 4 or later. Run `brew install bash`, then run the setup again. With the bash that macOS ships (3.2), one check is skipped and agent runs stop before they finish. |
 | `Depth: Look` | Read the lines above it: each `FAIL` line says what to fix. Run the setup again. |
 
 </details>
@@ -338,7 +338,7 @@ First, run the setup again. It picks up where it stopped.
 | A card says `The run needs your approval`. | The workflow stopped at a step that waits for a person. Read the plan or the diff, then press **Approve** or **Reject (stops the run)**. Nothing is committed on reject. |
 | A save is refused with a sentence about a rule. | The file stays as it was. The sentence names the rule: a protected path, a read-only file, a file that cannot be created. Fix the line and save again. |
 | `A run is using your files. Save again when it has finished.` | Wait for the run, or stop it, then save again. |
-| `lite ladder: coverage not run here (needs Docker)` | Not an error: coverage (and fuzz) are not part of the Docker-free ladder, and the day does not use them. |
+| `lite ladder: coverage not run here` | Not an error: coverage (and fuzz) are not part of the lite ladder, and the day does not use them. |
 | `The editor is not installed (run scripts/vendor_monaco.py): a plain text box is used.` | It works without it. Run the setup again later for the code editor. |
 | You want to stop the console. | Use the command the setup printed next to the address: `Stop-Process -Id <id>` on Windows, `kill <id>` on Linux and macOS. Or restart your laptop. |
 
