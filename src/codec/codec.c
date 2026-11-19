@@ -421,8 +421,7 @@ ts_err_t ts_enc_encode(ts_enc_t *e, const uint8_t *frame, uint16_t frame_seq,
         }
 
         if (err == TS_OK) {
-            /* 6.5: the reference becomes what the decoder reconstructs */
-            rows_expand(e->ref, frame, (size_t)q);
+            (void)memcpy(e->ref, frame, sizeof(e->ref));
             e->have_ref = true;
             if (key) {
                 e->force_key = false;
