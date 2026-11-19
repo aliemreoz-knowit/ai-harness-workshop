@@ -37,22 +37,22 @@ cd console && TS_LITE=0 ../.venv/Scripts/python -m console serve --personal --bu
 # browser: http://localhost:8765/  Today, the Your setup box at the top. Nothing to type.
 # afterwards: Your setup says "Full (your Copilot) · gates in Docker (full ladder)"; anything else: press Check again and read the line under it
 
-# ---- slide 8 · 09:11 · A raw agent on a hard ticket
+# ---- slide 10 · 09:14:30 · A raw agent on a hard ticket
 # beat 2 (console)
 python -m harness experiment start --tickets TS-107 --only raw --experiment kickoff-raw-20261120
 
-# ---- slide 19 · 09:41 · A level-1 call, then raw vs harness
+# ---- slide 22 · 09:51 · A level-1 call, then raw vs harness
 # beat 1 (console)
 python harness/level1_runner.py planner "Read AGENTS.md. List the three rules that matter most for a change in src/net. Do not edit anything." view 30
 # beat 5 (console)
 python -m harness experiment start --variants variants-section1.yaml --tickets TS-101 --only raw,gates --parallel 2 --experiment section1-live-20261120
 
-# ---- slide 20 · 09:46:30 · Write the ticket, then run it
+# ---- slide 23 · 09:56:30 · Write the ticket, then run it
 # beat (console, Tickets page): paste workshop/TS-104.agent.md into TS-104, Save, "Run this ticket": Autonomous, Your Copilot.
 # The same run as a command (Today, Section 1, with its recorded result as the backup):
 python -m harness run --workflow jira-to-pr --ticket tickets/TS-104.md --mode autonomous
 
-# ---- slide 29 · 10:29 · Two faults on purpose: which gate catches each?
+# ---- slide 32 · 10:39 · Two faults on purpose: which gate catches each?
 # beat 2 (console)
 git apply "$WORKSHOP/patches/fault1-unused-variable.patch" && git diff
 # beat 4 (console)
@@ -66,7 +66,7 @@ python -m harness gates no-heap
 # beat 9 (console)
 git checkout -- src/rate/rate.c && python -m harness gates build
 
-# ---- slide 37 · 11:15:30 · One prompt injection, caught three times
+# ---- slide 40 · 11:25:30 · One prompt injection, caught three times
 # beat 2 (terminal)
 python -m harness run --workflow jira-to-pr --ticket tickets/TS-666.md --mode interactive
 # beat 3 (console)
@@ -80,7 +80,7 @@ copilot --agent implementer
 # beat 6 (terminal)
 echo '{"toolName":"edit","toolArgs":{"path":"include/ts_proto.h"}}' | env -u MSYS_NO_PATHCONV bash .github/hooks/scripts/guardrails.sh pre
 
-# ---- slide 44 · 12:10 · What runs over lunch
+# ---- slide 47 · 12:10 · What runs over lunch
 # beat 1 (console)
 python -m harness experiment start --tickets TS-104,TS-107,TS-110 --only raw,cheap,team,team-small --repeats 2 --parallel 4 --experiment lunch-20261120
 
@@ -101,7 +101,7 @@ python -m http.server 8001 --bind 127.0.0.1 >/dev/null 2>&1 &
 # 12:58: share the screen again, deck on lunch-back (Back from lunch)
 # afterwards: four rows for lunch-20261120
 
-# ---- slide 53 · 13:20:30 · Kill it, resume it
+# ---- slide 56 · 13:20:30 · Kill it, resume it
 # beat 1 (console)
 python -m harness experiment start --tickets TS-104,TS-107,TS-110,TS-102 --only cheap --backend orchestrator-fake --experiment resume-demo-20261120
 # beat 2 (console)
@@ -113,11 +113,11 @@ git status --short
 # must print nothing; otherwise: git stash push -u -m before-release
 git switch --detach after-section-5
 python -m harness run --workflow release-readiness --mode interactive
-# about five minutes later it stops at: "Approve this tree as the release candidate? [y/n]". Leave that tab alone until the final demo (slide 69).
+# about five minutes later it stops at: "Approve this tree as the release candidate? [y/n]". Leave that tab alone until the final demo (slide 73).
 # 13:49: share the screen again.
 # afterwards: every gate of the ladder PASS above the waiting approval question
 
-# ---- slide 69 · 14:36 · Everything together, live
+# ---- slide 73 · 14:36 · Everything together, live
 # beat 1 (terminal)
 y
 # beat 2 (console)
