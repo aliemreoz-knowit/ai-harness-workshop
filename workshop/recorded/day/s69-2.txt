@@ -1,9 +1,0 @@
-$ python "$WORKSHOP/day-numbers.py" 20261120 20261120
-agent runs            27
-passed held-back tests 20
-AI credits            272.1 = $2.72
-gate catches          52
-retries               13
-approval points       45  (passed automatically: these runs were unattended)
-
-[exit 0]

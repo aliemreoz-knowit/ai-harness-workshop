@@ -111,11 +111,12 @@ void tsr_i_gap_track(tsr_t *r, uint16_t pkt_seq, bool retransmit, uint32_t now_m
         r->pkt_seq_expect = (uint16_t)(pkt_seq + 1U);
         r->m.pkts_expected++;
     } else {
-        if (pkt_seq == r->pkt_seq_expect) {
+        int16_t d = ts_seq_diff(pkt_seq, r->pkt_seq_expect);
+        if (d == 0) {
             r->pkt_seq_expect = (uint16_t)(pkt_seq + 1U);
             r->m.pkts_expected++;
-        } else if (pkt_seq > r->pkt_seq_expect) {
-            uint32_t gap = (uint32_t)pkt_seq - (uint32_t)r->pkt_seq_expect;
+        } else if (d > 0) {
+            uint32_t gap = (uint32_t)(uint16_t)d;
             r->m.pkts_missing += gap;
             r->m.pkts_expected += gap + 1U;
             if (gap > TSR_GAP_TRACK_MAX) {

@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: MIT */
 /*
  * tinystream v2 -- src/clients/clients.c
- * Static table of TS_MAX_CLIENTS viewers keyed by (ip, udp_port), lifecycle
- * and the per-client send path: fresh packets through the ring cursor and
- * NACK retransmissions, both charged to the client token bucket and the
- * global cap, retransmissions capped per tick
- * (include/ts_clients.h, PROTOCOL.md 4, 5, 8).
+ * Static table of TS_MAX_CLIENTS viewers keyed by (ip, udp_port), lifecycle,
+ * per-client counters and the per-client send path: fresh packets through the
+ * ring cursor and NACK retransmissions, both charged to the client token
+ * bucket and the global cap, retransmissions capped per tick
+ * (include/ts_clients.h, PROTOCOL.md 4, 5, 5.1, 8).
  *
  * No dynamic memory, no stdio; time differences are u32 serial differences.
  */
@@ -13,9 +13,9 @@
 #include <string.h>
 #include "ts_clients.h"
 
-/* Client bucket bytes that fresh packets leave to retransmissions, in full DATA
- * packets: a backlog of fresh packets cannot use up the budget of the repairs. */
-#define CL_REPAIR_RESERVE_PKTS 8U
+/* STATS per-client `state` byte (PROTOCOL.md 5.1). */
+#define CL_WIRE_ACTIVE   1U
+#define CL_WIRE_CLOSING  2U
 
 static void client_reset(ts_client_t *c, uint8_t id)
 {
@@ -199,10 +199,30 @@ uint8_t ts_clients_active(const ts_clients_t *t)
 
 uint8_t ts_clients_stats(const ts_clients_t *t, uint32_t now_ms, ts_stats_client_t *out)
 {
-    (void)t;
-    (void)now_ms;
-    (void)out;
-    return 0U;
+    uint8_t n = 0U;
+
+    if ((t != NULL) && (out != NULL)) {
+        for (uint8_t i = 0U; i < (uint8_t)TS_MAX_CLIENTS; i++) {
+            const ts_client_t *c = &t->c[i];
+            if ((c->state == TS_CL_ACTIVE) || (c->state == TS_CL_CLOSING)) {
+                ts_stats_client_t *s = &out[n];
+                (void)memset(s, 0, sizeof(*s));
+                s->id = c->id;
+                s->state = (c->state == TS_CL_ACTIVE) ? (uint8_t)CL_WIRE_ACTIVE : (uint8_t)CL_WIRE_CLOSING;
+                s->udp_port = c->udp.port;
+                s->kbps = c->kbps;
+                s->pkts_sent = c->ctr.pkts_sent;
+                s->bytes_sent = c->ctr.bytes_sent;
+                s->nacks_rx = c->ctr.nacks_rx;
+                s->retx_sent = c->ctr.retx_sent;
+                s->retx_dropped = c->ctr.retx_dropped;
+                s->keyframe_reqs = c->ctr.keyframe_reqs;
+                s->last_seen_ms = now_ms - c->last_seen_ms;
+                n++;
+            }
+        }
+    }
+    return n;
 }
 
 /* ---- send path ----------------------------------------------------------------- */
@@ -228,22 +248,16 @@ void ts_client_set_rate(ts_client_t *c, uint32_t kbps, uint32_t now_ms)
     }
 }
 
-/* A fresh packet of `len` bytes must leave the repair reserve in the client bucket. */
-static bool cl_fresh_fits(const ts_client_t *c, uint32_t len)
-{
-    return (c->bucket.kbps == 0U) ||
-           (ts_bucket_tokens(&c->bucket) >= (len + (CL_REPAIR_RESERVE_PKTS * TS_PKT_MAX)));
-}
-
 const ts_txq_slot_t *ts_client_next_fresh(ts_client_t *c, const ts_txq_t *q, ts_bucket_t *global)
 {
     const ts_txq_slot_t *s = NULL;
 
     if ((c != NULL) && (q != NULL) && (c->state == TS_CL_ACTIVE)) {
         const ts_txq_slot_t *p = ts_txq_cursor_peek(q, &c->cursor);
-        if ((p != NULL) && cl_fresh_fits(c, (uint32_t)p->len) &&
-            ts_bucket_take_pair(&c->bucket, global, (uint32_t)p->len)) {
+        if ((p != NULL) && ts_bucket_take_pair(&c->bucket, global, (uint32_t)p->len)) {
             ts_txq_cursor_advance(&c->cursor);
+            c->ctr.pkts_sent++;
+            c->ctr.bytes_sent += (uint32_t)p->len;
             s = p;
         }
     }
@@ -259,11 +273,15 @@ ts_err_t ts_client_retx_charge(ts_client_t *c, ts_bucket_t *global, uint32_t byt
     } else {
         uint8_t limit = (cap == 0U) ? (uint8_t)TS_RETX_PER_TICK : cap;
         if (c->retx_this_tick >= limit) {
+            c->ctr.retx_dropped++;
             rc = TS_E_FULL;
         } else if (!ts_bucket_take_pair(&c->bucket, global, bytes)) {
+            c->ctr.retx_dropped++;
             rc = TS_E_AGAIN;
         } else {
             c->retx_this_tick++;
+            c->ctr.retx_sent++;
+            c->ctr.bytes_sent += bytes;
         }
     }
     return rc;
@@ -283,6 +301,7 @@ ts_err_t ts_client_nack(ts_client_t *c, const ts_nack_t *n, const ts_txq_t *q, t
         } else {
             uint8_t count = (n->count > (uint8_t)TS_NACK_MAX) ? (uint8_t)TS_NACK_MAX : n->count;
             ts_client_touch(c, now_ms);
+            c->ctr.nacks_rx += (uint32_t)count;
             for (uint8_t i = 0U; i < count; i++) {
                 const ts_txq_slot_t *s = NULL;
                 ts_err_t lr = ts_txq_lookup(q, n->e[i].frame_seq, n->e[i].frag_idx, &s);
@@ -313,6 +332,7 @@ bool ts_client_keyframe_req(ts_client_t *c, ts_keysched_t *k, uint32_t now_ms)
 
     if ((c != NULL) && (c->state == TS_CL_ACTIVE)) {
         ts_client_touch(c, now_ms);
+        c->ctr.keyframe_reqs++;
         if ((!c->keyreq_seen) || ((now_ms - c->last_keyreq_ms) >= TS_KEYREQ_MIN_INTERVAL_MS)) {
             c->keyreq_seen = true;
             c->last_keyreq_ms = now_ms;
