@@ -34,7 +34,7 @@
 #define TSD_MAX_FPS           1000U
 #define TSD_GLOBAL_BURST      (TS_MAX_FRAGS * TS_PKT_MAX)   /* one worst-case frame, 156640 bytes */
 #define TSD_STREAM_ID_SALT    0x7473646DU                                    /* "tsdm" */
-#define TSD_ENC_BUF_BYTES     TS_FRAME_BYTES        /* encoded frame buffer */
+#define TSD_ENC_BUF_BYTES     TS_ENC_MAX            /* encoded frame buffer */
 
 /* daemon event codes for the (compiled-out) ring log */
 #define TSD_EV_PROTO_ERR      1U
@@ -275,21 +275,20 @@ static void tsd_dispatch(tsd_t *d, ts_client_t *c, const ts_tlv_t *tlv, uint32_t
     }
 }
 
-/* Handle the control message of one read. */
-static void tsd_handle_msg(tsd_t *d, ts_client_t *c, const uint8_t *buf, size_t len, uint32_t now_ms)
+/* Pop and handle every complete TLV buffered for `c`. */
+static void tsd_drain_tlvs(tsd_t *d, ts_client_t *c, uint32_t now_ms)
 {
-    if (len >= (size_t)TS_TLV_HDR_LEN) {
+    bool more = true;
+    while (more && tsd_client_live(c)) {
         ts_tlv_t tlv;
-        tlv.type = buf[0];
-        tlv.flags = buf[1];
-        tlv.len = ts_rd16(&buf[2]);
-        tlv.value = &buf[TS_TLV_HDR_LEN];
-        if ((uint32_t)tlv.len > TS_TLV_MAX_LEN) {
-            tsd_close_client(d, c, true);   /* len > TS_TLV_MAX_LEN */
-        } else if (((size_t)TS_TLV_HDR_LEN + (size_t)tlv.len) <= len) {
+        ts_err_t r = ts_tlv_acc_next(&c->acc, &tlv);
+        if (r == TS_OK) {
             tsd_dispatch(d, c, &tlv, now_ms);
+        } else if (r == TS_E_AGAIN) {
+            more = false;
         } else {
-            /* truncated message: dropped */
+            tsd_close_client(d, c, true);   /* TS_E_TOOLONG: len > TS_TLV_MAX_LEN */
+            more = false;
         }
     }
 }
@@ -298,11 +297,24 @@ static void tsd_client_rx(tsd_t *d, ts_client_t *c, uint32_t now_ms)
 {
     bool more = true;
     for (uint32_t i = 0U; (i < TSD_TCP_RX_PER_TICK) && more && tsd_client_live(c); i++) {
-        /* ctl_rx is TS_TLV_ACC_CAP bytes, see pool.c */
-        int32_t n = ts_io_tcp_recv(d->io, c->tcp, d->pool->ctl_rx, (size_t)TS_TLV_ACC_CAP);
+        /* never read more than the accumulate buffer can take (ctl_rx is TS_TLV_ACC_CAP, see pool.c) */
+        size_t pending = (size_t)ts_tlv_acc_pending(&c->acc);
+        size_t room = (pending < (size_t)TS_TLV_ACC_CAP) ? ((size_t)TS_TLV_ACC_CAP - pending) : 0U;
+        int32_t n;
+        if (room == 0U) {
+            /* cannot happen with a correct accumulate parser (max TLV < capacity) */
+            tsd_close_client(d, c, true);
+            n = 0;
+        } else {
+            n = ts_io_tcp_recv(d->io, c->tcp, d->pool->ctl_rx, room);
+        }
         if (n > 0) {
             ts_client_touch(c, now_ms);
-            tsd_handle_msg(d, c, d->pool->ctl_rx, (size_t)n, now_ms);
+            if (ts_tlv_acc_push(&c->acc, d->pool->ctl_rx, (size_t)n) != TS_OK) {
+                tsd_close_client(d, c, true);
+            } else {
+                tsd_drain_tlvs(d, c, now_ms);
+            }
         } else if (n == 0) {
             more = false;
         } else {
@@ -333,23 +345,33 @@ static void tsd_accept(tsd_t *d, uint32_t now_ms)
 /* ---- UDP: NACK in, retransmit out ------------------------------------------ */
 
 /* Send one admitted retransmission. ts_client_nack() already charged the
- * buckets; a re-pack or socket failure is a drop (the tokens stay spent, the
- * receiver asks again). */
-static void tsd_retransmit(tsd_t *d, const ts_client_t *c, const ts_txq_slot_t *slot)
+ * buckets and counted it as sent; a re-pack or socket failure turns it into a
+ * drop (the tokens stay spent, the receiver asks again). */
+static void tsd_retransmit(tsd_t *d, ts_client_t *c, const ts_txq_slot_t *slot)
 {
     size_t len = 0U;
+    bool sent = false;
     if (ts_txq_make_retransmit(slot, d->pkt_buf, sizeof(d->pkt_buf), &len) == TS_OK) {
         int32_t n = ts_io_udp_send(d->io, &c->udp, d->pkt_buf, len);
         if ((n > 0) && ((size_t)n == len)) {
             d->stats.retx_sent++;
             d->stats.bytes_sent += (uint32_t)len;
+            sent = true;
         }
+    }
+    if (!sent) {
+        uint32_t charged = (uint32_t)slot->len;   /* what ts_client_retx_charge() counted */
+        if (c->ctr.retx_sent > 0U) {
+            c->ctr.retx_sent--;
+        }
+        c->ctr.bytes_sent = (c->ctr.bytes_sent >= charged) ? (c->ctr.bytes_sent - charged) : 0U;
+        c->ctr.retx_dropped++;
     }
 }
 
 static void tsd_on_datagram(tsd_t *d, const ts_addr_t *from, const uint8_t *buf, size_t len, uint32_t now_ms)
 {
-    ts_client_t *c = ts_client_find(&d->clients, from);   /* ACTIVE, ip AND port */
+    ts_client_t *c = ts_client_find(&d->clients, from);   /* ACTIVE clients only */
     if (c != NULL) {
         ts_nack_t nack;
         ts_client_touch(c, now_ms);   /* any packet from the client keeps it alive */
@@ -534,6 +556,10 @@ static void tsd_send_fresh(tsd_t *d)
                 } else {
                     /* socket full (0) or unroutable (< 0): the packet is dropped like
                      * on the wire and the receiver NACKs it; it is not counted as sent */
+                    if (c->ctr.pkts_sent > 0U) {
+                        c->ctr.pkts_sent--;
+                    }
+                    c->ctr.bytes_sent = (c->ctr.bytes_sent >= len) ? (c->ctr.bytes_sent - len) : 0U;
                     if (n == 0) {
                         blocked = true;   /* stop for this tick */
                     } else {
