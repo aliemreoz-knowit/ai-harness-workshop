@@ -27,7 +27,7 @@ from types import ModuleType
 
 HT_DIR = Path(__file__).resolve().parent
 KINDS = ("unit", "loopback")
-LABEL = "lite (zig)"
+LABEL = "zig cc"
 
 
 def fail(msg: str) -> int:

@@ -282,7 +282,7 @@ It downloads only these, and it sends no data anywhere:
 | **Tool, MCP** | A tool is something the agent can call: read a file, edit, run a command. An MCP server plugs another system in as a bundle of tools. Every tool costs tokens on every call and adds risk. |
 | **Gate** | A pass/fail check with no model in it: build, tests, static analysis, policy. Each gate has a short name, such as `build`, `misra`, `unit-tests` or `diff-policy`. |
 | **Gate ladder** | The gates in a fixed order, the ones without a build first. A failing gate is feedback for the agent, not an error. |
-| **Lite ladder** | The gates built with zig on your laptop, here and on the stage. A gate it cannot run (fuzz, coverage) says `not run here`: neither a pass nor a fail. The `tinystream-dev` container (`TS_LITE=0`) is not used in the workshop. |
+| **Gate ladder** | The gates built with zig on your laptop, here and on the stage. A gate it cannot run (fuzz, coverage) says `not run here`: neither a pass nor a fail. The `tinystream-dev` container (`TS_LITE=0`) is not used in the workshop. |
 | **Retry budget** | How many gate-triggered attempts an agent gets before the harness escalates: to a stronger model, or to a person. |
 | **Role** | An agent with one job, its own prompt, model, tools and write scope: planner, implementer, test-writer, reviewer. |
 | **Guardrail** | A rule enforced in code, not asked of the model: tool permissions, protected paths, a shell deny list, the diff policy. |
@@ -316,7 +316,7 @@ First, run the setup again. It picks up where it stopped.
 | `could not download ... PortableGit ...` or `could not unpack the portable Git` | A network or proxy problem: run the setup again. Or install Git for Windows yourself (https://git-scm.com/downloads, it installs for your user too) and run the setup again. |
 | `git is missing.` (macOS, Linux) | Install git (on macOS: `xcode-select --install`), then run the setup again. |
 | `pip could not install the packages` | A network or proxy problem, or on Windows a path that is too long. Run the setup again later: it retries. Behind a company proxy, set `HTTPS_PROXY` before you run the setup. |
-| `macOS: install a newer bash (brew install bash) so every gate runs; until then a check is skipped` | The full lite ladder needs bash 4 or later. Run `brew install bash`, then run the setup again. With the bash that macOS ships (3.2), one check is skipped and agent runs stop before they finish. |
+| `macOS: install a newer bash (brew install bash) so every gate runs; until then a check is skipped` | Every gate needs bash 4 or later. Run `brew install bash`, then run the setup again. With the bash that macOS ships (3.2), one check is skipped and agent runs stop before they finish. |
 | `Depth: Look` | Read the lines above it: each `FAIL` line says what to fix. Run the setup again. |
 
 </details>
@@ -338,7 +338,7 @@ First, run the setup again. It picks up where it stopped.
 | A card says `The run needs your approval`. | The workflow stopped at a step that waits for a person. Read the plan or the diff, then press **Approve** or **Reject (stops the run)**. Nothing is committed on reject. |
 | A save is refused with a sentence about a rule. | The file stays as it was. The sentence names the rule: a protected path, a read-only file, a file that cannot be created. Fix the line and save again. |
 | `A run is using your files. Save again when it has finished.` | Wait for the run, or stop it, then save again. |
-| `lite ladder: coverage not run here` | Not an error: coverage (and fuzz) are not part of the lite ladder, and the day does not use them. |
+| `not run here: coverage` | Not an error: coverage (and fuzz) are not run on this laptop, and the day does not use them. |
 | `The editor is not installed (run scripts/vendor_monaco.py): a plain text box is used.` | It works without it. Run the setup again later for the code editor. |
 | You want to stop the console. | Use the command the setup printed next to the address: `Stop-Process -Id <id>` on Windows, `kill <id>` on Linux and macOS. Or restart your laptop. |
 

@@ -65,7 +65,7 @@ OUT = Path("build-lite")          # paths are relative to REPO (the working dire
 MANIFEST = Path("scripts/test_manifest.txt")
 STUB = "scripts/lite/cap_stub.c"
 CROSS = "aarch64-linux-gnu"
-LABEL = "lite (zig)"
+LABEL = "zig cc"
 NEEDS_DOCKER = "not run here"
 GATE_TIMEOUT_S = 300              # every test of one gate (gates.yaml timeout_s)
 TEST_TIMEOUT_S = 120              # one test (CMakeLists.txt TIMEOUT)
@@ -813,7 +813,7 @@ def g10(ctx: Ctx, log: Callable[[str], None]) -> tuple[str, str]:
 
 
 def needs_docker(ctx: Ctx, log: Callable[[str], None]) -> tuple[str, str]:
-    log("libFuzzer and gcov are not part of the lite ladder: this gate is not run")
+    log("libFuzzer and gcov are not run on this laptop: this gate is not run here")
     return "SKIP", NEEDS_DOCKER
 
 

@@ -1,5 +1,5 @@
 $ scripts/check.sh misra; git apply -R "$WORKSHOP/patches/injected-change.patch"
-misra          FAIL     73 ms (budget  30 s)  forbidden calls        lite (zig): 1 finding(s) of rule(s) 21.21, first src/net/daemon.c:59 (see build-check/misra.log)
----- ladder: 0 PASS, 1 FAIL, 0 SKIP in 73 ms (logs in build-check) -- lite (zig)
+misra          FAIL     73 ms (budget  30 s)  forbidden calls        zig cc: 1 finding(s) of rule(s) 21.21, first src/net/daemon.c:59 (see build-check/misra.log)
+---- ladder: 0 PASS, 1 FAIL, 0 SKIP in 73 ms (logs in build-check) -- zig cc
 
 [exit 0]

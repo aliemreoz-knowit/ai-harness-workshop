@@ -71,9 +71,9 @@ builds without a CMake change; list every new test in
 ## Build and test (only through the scripts)
 
 Everything builds and runs through the scripts, with zig cc on the host:
-`scripts/check.sh` runs the lite ladder (`scripts/lite_gates.py`);
+`scripts/check.sh` runs the gate ladder (`scripts/lite_gates.py`);
 on Windows run it from Git Bash with `MSYS_NO_PATHCONV=1`. Every gate says
-`lite (zig)`; fuzz and coverage SKIP (not run here).
+`zig cc`; fuzz and coverage SKIP (not run here).
 
 ```
 scripts/build.sh host                      # presets: host | asan | pi | coverage | fuzz

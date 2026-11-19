@@ -32,8 +32,7 @@ back. One console runs per checkout: a second start prints the address of the on
 
 ## The ladder line
 
-The top of the Today page says which gate ladder the console uses: the lite ladder, built with zig on this
-laptop. Only `TS_LITE=0` in the console's environment picks the container ladder, which the workshop does not use.
+The top of the Today page says where the gates run: on this laptop, built with zig. Only `TS_LITE=0` in the console's environment picks the container ladder, which the workshop does not use.
 
 ## Credits
 

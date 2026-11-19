@@ -17,7 +17,7 @@ Each gate prints one line: `<gate> PASS|FAIL|SKIP <ms> (budget) <name> <reason>`
 then a summary. Exit 0 = all PASS (fuzz may SKIP), 1 = a FAIL, 3 = another gate
 SKIPped (ladder incomplete). Full logs: `build-check/<gate>.log`.
 
-check.sh runs the lite ladder (`scripts/lite_gates.py`, zig cc): every reason says `lite (zig)`,
+check.sh runs the gate ladder (`scripts/lite_gates.py`, zig cc): every reason says `zig cc`,
 and fuzz and coverage say `SKIP ... not run here` (exit 0 when nothing FAILed). The harness counts
 those SKIPs like the fuzz gate's, not as an incomplete ladder.
 On Windows `test_capture` and `test_lb_file_clip` show as `SKIP` lines in the

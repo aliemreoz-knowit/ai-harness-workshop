@@ -44,7 +44,7 @@ CACHE_S = 600.0  # how long a result is kept
 TIMEOUT_S = 660.0  # the doctor's own worst case: its Copilot probe (3 x 90 s + 30 s), docker info, the gate probe (300 s)
 DEPTHS = ("Try (fake model)", "Try (your Copilot)", "Full (fake model)", "Full (your Copilot)")
 _DEPTH = re.compile(r"^Depth: (.*?)\s*$", re.M)
-_LADDER = re.compile(r"^Ladder: (full|lite) \(", re.M)
+_LADDER = re.compile(r"^Ladder: (full|lite|zig) \(", re.M)
 _AUTH = re.compile(r"^\s*(OK|WARN|FAIL|SKIP)\s+copilot auth\s", re.M)
 _KILL_WAIT_S = 5.0
 
@@ -81,6 +81,7 @@ def read_doctor(output: str) -> dict[str, str] | None:
         return None
     ladders = _LADDER.findall(output)
     ladder = ladders[-1] if ladders else ("full" if depth.startswith("Full") else "lite")
+    ladder = "lite" if ladder == "zig" else ladder  # the doctor says "zig (this laptop)"
     if depth.endswith("(your Copilot)"):
         copilot = _COPILOT["OK"]
     else:  # not logged in (WARN), no CLI or SDK (FAIL); else not checked: the doctor's own words stay out of it

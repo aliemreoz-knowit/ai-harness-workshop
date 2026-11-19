@@ -10,7 +10,7 @@
 # typed here changes, the console shows too: one place for the whole stage. It sets what the commands need there, the
 # same as the console gives its own commands (console/console/workshop.py):
 #
-#   TS_LITE=1  MSYS_NO_PATHCONV=1   the lite ladder (zig cc); Git Bash leaves the arguments alone
+#   TS_LITE=1  MSYS_NO_PATHCONV=1   the gates with zig cc; Git Bash leaves the arguments alone
 #   PATH                            this repository's .venv first: python is the venv's
 #   WORKSHOP                        this repository's workshop/ folder: the patches, day-numbers.py ...
 #                                   (the copy has no workshop/ on a ticket branch)

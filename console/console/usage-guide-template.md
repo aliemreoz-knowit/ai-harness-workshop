@@ -14,7 +14,7 @@ they get stuck. Every place they get stuck is a gap in the guide, not in the rea
 
 - **Use it for:** <the kind of task it handles well>
 - **Do not use it for:** <protected areas, changes it refuses, anything that needs real hardware or
-  a gate your ladder does not run (the lite ladder skips misra, no-heap, sanitizers, fuzz, coverage)>
+  a gate your ladder does not run (fuzz and coverage are not run on this laptop)>
 
 ```
 <the workflow steps, e.g. ticket -> planner -> implementer <-> gates -> test-writer -> ladder -> reviewer -> approval -> branch + commit>

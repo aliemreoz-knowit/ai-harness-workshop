@@ -61,7 +61,7 @@ def _parser() -> argparse.ArgumentParser:
     d.add_argument("--json", action="store_true")
     d.add_argument("--skip-auth", action="store_true", help="do not start the Copilot CLI")
     d.add_argument("--depth", action="store_true",
-                   help="end with the lines 'Depth: <depth>' and 'Ladder: full (container) | lite (zig)'; exit 0")
+                   help="end with the lines 'Depth: <depth>' and 'Ladder: full (container) | zig (this laptop)'; exit 0")
 
     g = sub.add_parser("gates", help="run gates and print structured feedback")
     g.add_argument("spec", nargs="*", help="gate ids (build unit-tests) or one profile name")

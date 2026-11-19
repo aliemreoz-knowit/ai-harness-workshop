@@ -470,7 +470,7 @@ def _lite_note(value: Any) -> str | None:
     if isinstance(value, str):
         return _text(value) or None
     if isinstance(value, list) and value and all(isinstance(i, str) and _GATE_ID.fullmatch(i) for i in value):
-        return f"lite ladder: {' '.join(value[:_ITEMS_MAX])} not run here"
+        return f"not run here: {' '.join(value[:_ITEMS_MAX])}"
     return None
 
 

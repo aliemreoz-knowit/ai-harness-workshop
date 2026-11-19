@@ -35,7 +35,7 @@ cd console && TS_LITE=1 ../.venv/Scripts/python -m console serve --personal --bu
 
 # ==== 08:05 · console · Smoke: the console says the laptop is ready
 # browser: http://localhost:8765/  Today, the Your setup box at the top. Nothing to type.
-# afterwards: Your setup says "Try (your Copilot) · gates with zig (lite ladder)"; anything else: press Check again and read the line under it
+# afterwards: Your setup says "Try (your Copilot) · gates run on this laptop (zig)"; anything else: press Check again and read the line under it
 
 # ---- slide 10 · 09:14:30 · A raw agent on a hard ticket
 # beat 2 (console)

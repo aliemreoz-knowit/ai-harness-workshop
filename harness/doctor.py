@@ -40,7 +40,7 @@ from .config import HarnessConfig
 from .runtime import CopilotRuntime, copilot_env, env_passthrough, sdk_available, sdk_version
 
 OK, WARN, FAIL, SKIP = "OK", "WARN", "FAIL", "SKIP"
-LADDER = {"full": "full (container)", "lite": "lite (zig)"}     # the doctor --depth "Ladder:" line
+LADDER = {"full": "full (container)", "lite": "zig (this laptop)"}     # the doctor --depth "Ladder:" line
 LITE_OFF_DOCKER_WAIT_S = 60.0    # TS_LITE=0: how long the doctor waits for `docker info` (check.sh: no bound)
 
 

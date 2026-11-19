@@ -119,9 +119,9 @@ class LadderResult:
         return [g for g in self.gates if g.not_run_here]
 
     def lite_note(self) -> str:
-        """'lite ladder: misra no-heap sanitizers coverage not run here (needs Docker)', or '' when every gate could run."""
+        """'not run here: fuzz coverage', or '' when every gate could run."""
         ids = [g.id for g in self.not_run_here]
-        return f"lite ladder: {' '.join(ids)} not run here" if ids else ""
+        return f"not run here: {' '.join(ids)}" if ids else ""
 
     @property
     def incomplete_only(self) -> bool:

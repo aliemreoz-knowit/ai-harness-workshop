@@ -138,13 +138,13 @@ export function ticketChoices(paths, personal) {
   return [...ready, ...all.filter((path) => /(^|\/)[A-Z][A-Z0-9]*-\d+\.md$/.test(path))];
 }
 
-const LADDER_WORDS = { lite: 'gates with zig (lite ladder)', full: 'gates in the container (full ladder)' };
+const LADDER_WORDS = { lite: 'gates run on this laptop (zig)', full: 'gates in the container (full ladder)' };
 // A lite console says why: it was started with TS_LITE=1, the setup recorded "no Docker", or the image is not there
 // (`ladder_why` of GET /api/setup).
 const LITE_WHY_WORDS = {
-  'ts-lite': 'lite ladder (TS_LITE=1)',
-  'no-docker': 'lite ladder (zig on this laptop)',
-  'no-image': 'lite ladder (zig on this laptop)',
+  'ts-lite': 'gates run on this laptop (zig)',
+  'no-docker': 'gates run on this laptop (zig)',
+  'no-image': 'gates run on this laptop (zig)',
 };
 
 /**
@@ -217,12 +217,12 @@ const rank = (id) => {
 };
 
 // "lite ladder: misra no-heap sanitizers coverage not run here (needs Docker)": the gates the Docker-free ladder could not run
-const LITE = /lite ladder: ((?:(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*) )*(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*)) not run here/;
+const LITE = /(?:lite ladder: ((?:(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*) )*(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*)) not run here|not run here: ((?:(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*) )*(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*)))/;
 
 /** The ids of the gates a summary says the Docker-free ladder did not run here (they need Docker). */
 export function notRunHere(summary) {
   const match = LITE.exec(String(summary ?? ''));
-  return match ? match[1].split(' ') : [];
+  return match ? (match[1] ?? match[2]).split(' ') : [];
 }
 
 /**

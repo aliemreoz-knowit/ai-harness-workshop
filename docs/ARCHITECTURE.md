@@ -144,7 +144,7 @@ loopback, budgets (codec budgets) and diff-policy run there, the gates that
 need the container SKIP with `needs Docker (not run here)`, and it exits 0
 when nothing FAILed. The harness counts those SKIPs like the fuzz gate's ("not
 run here", not an incomplete ladder) and names them:
-`lite ladder: misra no-heap sanitizers coverage not run here (needs Docker)`.
+`not run here: fuzz coverage`.
 
 | gate | what | state | clean / incr. |
 |---|---|---|---|
