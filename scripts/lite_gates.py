@@ -467,8 +467,9 @@ def built(ctx: Ctx, log: Callable[[str], None], gid: str, plan: Plan | None = No
 
 
 def tests_gate(ctx: Ctx, log: Callable[[str], None], gid: str, label: str,
-              show_all: bool = False, plan: Plan | None = None) -> tuple[str, str]:
-    """Run the tests of one label (``*``: every test) from the plan's build, ctest style."""
+              show_all: bool = False, plan: Plan | None = None, name_re: str = "") -> tuple[str, str]:
+    """Run the tests of one label (``*``: every test) from the plan's build, ctest style; ``name_re`` keeps the
+    tests whose name it matches (ctest -R)."""
     plan = plan or host_plan()
     res = built(ctx, log, gid, plan)
     if isinstance(res, tuple):
@@ -477,8 +478,10 @@ def tests_gate(ctx: Ctx, log: Callable[[str], None], gid: str, label: str,
         return "FAIL", f"missing {MANIFEST.as_posix()}"
     registered = [(n, s) for n, s, labels in discover_tests() if label == "*" or label in labels]
     names = {n for n, _ in registered}
+    if name_re:
+        registered = [(n, s) for n, s in registered if re.search(name_re, n)]
     wanted = sorted({t for lab in ("unit", "loopback", "budget") for t in manifest(lab)}) if label == "*" else manifest(label)
-    missing = [t for t in wanted if t not in names]
+    missing = [] if name_re else [t for t in wanted if t not in names]
     if missing:
         log(f"tests in {MANIFEST.as_posix()} but not registered in preset lite: {' '.join(missing)}")
         return "FAIL", f"missing tests (label {label}): {' '.join(missing)}"
@@ -885,6 +888,42 @@ def quiet_crashes() -> None:
         pass
 
 
+LABELS = {"unit": "unit", "property": "property", "loopback": "loopback", "budget": "budget"}
+
+
+def scripts_mode(mode: str, argv: list[str]) -> int:
+    """``--build <preset>`` (scripts/build.sh) and ``--ctest <preset> [-L label] [-R regex]`` (scripts/test.sh): the
+    build, or the tests, of a preset with zig cc, the log on stdout. host, coverage, fuzz: the host build; asan:
+    the UBSan build; pi: the aarch64 cross build (build only)."""
+    preset = argv[0] if argv and not argv[0].startswith("-") else "host"
+    rest = argv[1:] if argv and not argv[0].startswith("-") else argv
+    label, name_re = "*", ""
+    i = 0
+    while i < len(rest):
+        if rest[i] == "-L" and i + 1 < len(rest):
+            label = LABELS.get(rest[i + 1], rest[i + 1])
+            i += 1
+        elif rest[i] == "-R" and i + 1 < len(rest):
+            name_re = rest[i + 1]
+            i += 1
+        i += 1
+    zig, note = zig_command()
+    jobs = os.cpu_count() or 4
+    ctx = Ctx(Path("build-check"), "build-check", Builder(zig, jobs) if zig else None, note, jobs)
+    ctx.log_dir.mkdir(parents=True, exist_ok=True)
+    plan = cross_plan() if preset == "pi" else ubsan_plan() if preset == "asan" else host_plan()
+    if mode == "--build" or preset == "pi":
+        res = built(ctx, print, "build", plan)
+        if isinstance(res, tuple):
+            print(f"{res[0]}: {res[1]}")
+            return 0 if res[0] == "PASS" else 1
+        print(f"build {'PASS' if res.ok else 'FAIL'} ({LABEL}, preset {preset})")
+        return 0 if res.ok else 1
+    status, reason = tests_gate(ctx, print, "tests", label, plan=plan, name_re=name_re)
+    print(f"tests {status}: {reason}")
+    return 0 if status == "PASS" else 1
+
+
 def main(argv: list[str]) -> int:
     os.chdir(REPO)
     for stream in (sys.stdout, sys.stderr):     # paths may hold any character; the harness reads UTF-8
@@ -892,6 +931,10 @@ def main(argv: list[str]) -> int:
             stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
         except (AttributeError, ValueError):
             pass
+    if argv and argv[0] in ("--build", "--ctest"):
+        if os.name == "nt":
+            quiet_crashes()
+        return scripts_mode(argv[0], argv[1:])
     wanted = [OLD.get(a.lower(), a.lower()) for a in argv] or list(ALL)
     for g in wanted:
         if g not in ALL:

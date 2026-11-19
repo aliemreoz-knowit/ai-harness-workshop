@@ -5,16 +5,15 @@ description: Build tinystream and run its tests through the repository scripts (
 
 # Build and test
 
-The host has no compiler. Everything runs in the `tinystream-dev:latest`
-container through `scripts/`; on Windows run them from Git Bash with
-`MSYS_NO_PATHCONV=1`.
+Everything builds and runs through `scripts/`, with zig cc on the host (no
+Docker); on Windows run them from Git Bash with `MSYS_NO_PATHCONV=1`.
 
 ```
 scripts/build.sh host                    # configure + build a preset
 scripts/test.sh host                     # build if needed, then every test of the preset
 scripts/test.sh host -L unit             # one label: unit | property | loopback | budget
 scripts/test.sh host -R test_txq         # one test executable (ctest regex)
-scripts/test.sh asan -L unit             # the same under ASan + UBSan
+scripts/test.sh asan -L unit             # the same under UBSan
 ```
 
 | Preset | Use it for |

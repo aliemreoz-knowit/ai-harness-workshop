@@ -210,11 +210,8 @@ def _check_docker(cfg: ConsoleConfig, probe: Probe) -> Check:
     if code == 0:
         version = re.search(r"Server Version:\s*(\S+)", out)
         return Check("docker", True, f"the engine answers (server {version[1]})" if version else "the engine answers")
-    if cfg.personal:
-        return Check(
-            "docker", True, f"docker info failed ({_last_line(out)}); the gates run without Docker (the Docker-free "
-            "ladder, fewer gates)", "start Docker Desktop for the full gate ladder", warn=True,
-        )  # fmt: skip
+    if cfg.personal:   # the workshop runs without Docker: nothing to start
+        return Check("docker", True, "not needed: the gates run without Docker (zig cc)")
     return Check(
         "docker", False, f"docker info failed ({_last_line(out)})",
         "start Docker Desktop and wait until it says it is running (install it first if it is missing)",
