@@ -63,7 +63,7 @@ def image_exists() -> bool:
     return done.returncode == 0
 
 
-def decide(root: Path, image_exists: Callable[[], bool] = image_exists) -> tuple[str, str]:
+def decide(root: Path, image_exists: Callable[[], bool] | None = None) -> tuple[str, str]:
     """``(ladder, why)``: ``("full", "")``, ``("lite", "ts-lite")`` (``TS_LITE=1``), ``("lite", "no-docker")`` (marker)
     or ``("lite", "no-image")``. Under ``TS_LITE=0`` or ``1`` nothing is read or asked; Docker is not asked when the
     marker says lite."""
@@ -74,7 +74,8 @@ def decide(root: Path, image_exists: Callable[[], bool] = image_exists) -> tuple
         return "lite", TS_LITE
     if read_marker(root) == "lite":
         return "lite", NO_DOCKER
-    if image_exists():
+    ask = image_exists or globals()["image_exists"]  # looked up now: a test's monkeypatch of the module's reaches it
+    if ask():
         return "full", ""
     return "lite", NO_IMAGE
 
