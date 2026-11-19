@@ -113,10 +113,7 @@ static void txq_put(ts_txq_t *q, uint16_t frame_seq, uint8_t flags, uint16_t ts_
     ts_wr16(&p[TXQ_OFF_TS_MS], ts_ms);
     ts_wr16(&p[TXQ_OFF_RESERVED], 0U);
     (void)memcpy(&p[TS_HDR_LEN], payload, (size_t)payload_len);
-    {
-        uint16_t crc_len = (uint16_t)(((uint32_t)payload_len + 3U) & ~3U);
-        ts_wr32(&p[TXQ_OFF_CRC], txq_crc(p, crc_len));
-    }
+    ts_wr32(&p[TXQ_OFF_CRC], txq_crc(p, payload_len));
 
     q->pkt_seq_next = (uint16_t)(q->pkt_seq_next + 1U);
     q->pushed++;
@@ -178,7 +175,7 @@ ts_err_t ts_txq_lookup(const ts_txq_t *q, uint16_t frame_seq, uint8_t frag_idx, 
                             rc = TS_E_NOTFOUND;
                         } else {
                             uint16_t want = (uint16_t)((uint32_t)s->pkt_seq - (uint32_t)s->frag_idx + (uint32_t)frag_idx);
-                            int32_t dist = (int32_t)newest->pkt_seq - (int32_t)want;
+                            int32_t dist = txq_seq_dist(newest->pkt_seq, want);
                             if ((dist < 0) || ((uint32_t)dist >= held)) {
                                 rc = TS_E_TOO_OLD;   /* fragment of a partially overwritten frame */
                             } else {
