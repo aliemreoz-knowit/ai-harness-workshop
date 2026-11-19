@@ -53,7 +53,8 @@ $Image = 'tinystream-dev:latest'
 $DOCTOR_TIMEOUT = 180
 $WINGET_TIMEOUT = 600
 $CONSOLE_WAIT = 60
-$MAX_ROOT = 135  # 259 characters per file path, minus the 121 the deepest file in .venv needs, minus 3 spare
+$MAX_ROOT = 80  # 259 characters per file path, minus the ~170 the deepest file of a run needs (an experiment's
+                # prompts and builds below .console-data), minus spare
 $LimitedOut = ''
 
 function Show-Usage {
@@ -204,18 +205,42 @@ if ($Check) { Say 'tinystream harness workshop: setup check (nothing is installe
 else { Say 'tinystream harness workshop: setup' }
 Say "Folder: $Root"
 
-# Windows allows 260 characters for a file path unless long paths are switched on. The deepest file the setup
-# writes is one of the zig C compiler's in .venv, 120 characters below this folder
-# (.venv\Lib\site-packages\ziglang\lib\libc\mingw\lib-common\api-ms-win-core-processtopology-obsolete-l1-1-0_windowsapp.def):
-# with a longer folder path pip fails halfway with a puzzling error, so the setup stops here instead.
-$longPaths = $null
-try {
-    $longPaths = (Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name LongPathsEnabled `
-        -ErrorAction Stop).LongPathsEnabled
-} catch { $longPaths = $null }
-if ($Root.Length -gt $MAX_ROOT -and $longPaths -ne 1) {
-    Fail "this folder's path has $($Root.Length) characters: too long for Windows, which allows 260 per file."
-    Finish 'Look' @("The setup needs a folder path of at most $MAX_ROOT characters. Move the folder somewhere shorter, for example C:\Users\$env:USERNAME\ws, and run the setup again.")
+# Windows allows 260 characters for a file path. The deepest files are a run's: an experiment writes its prompts and
+# builds about 170 characters below this folder (.console-data\units\unit-01\repo-eval\worktrees\<experiment>\<run>\
+# build-lite\... and ...\repo\results\<experiment>\<run>\orchestrator\<run id>\prompts\...), and a run that hits the
+# limit stops with a puzzling "file not found". Explorer's "Extract all" of the ZIP gives a folder in a folder under
+# Downloads, often too long. So a longer path is copied to a short one, and the setup goes on there by itself.
+if ($Root.Length -gt $MAX_ROOT) {
+    Note "this folder's path has $($Root.Length) characters: too long for the runs (Windows allows 260 per file)."
+    $target = $null
+    foreach ($cand in @((Join-Path $env:USERPROFILE 'ws\ai-harness-workshop'), 'C:\ws\ai-harness-workshop')) {
+        if ($cand.Length -le $MAX_ROOT) { $target = $cand; break }
+    }
+    if ($Check -or -not $target) {
+        Finish 'Look' @("The setup needs a folder path of at most $MAX_ROOT characters. Move the folder somewhere shorter, for example C:\Users\$env:USERNAME\ws, and run the setup again.")
+    }
+    if (Test-Path -LiteralPath (Join-Path $target 'setup.ps1') -PathType Leaf) {
+        Say "  $target is there already (an earlier setup copied it): the setup goes on there"
+    } else {
+        Say "  copying this folder to $target (a short path), then the setup goes on there by itself"
+        try {
+            $null = New-Item -ItemType Directory -Force -Path $target -ErrorAction Stop
+            # what an earlier setup made here stays here: the copy makes its own
+            foreach ($item in @(Get-ChildItem -LiteralPath $Root -Force | Where-Object { $_.Name -notin @('.venv', '.tools', '.console-data') })) {
+                Copy-Item -LiteralPath $item.FullName -Destination $target -Recurse -Force -ErrorAction Stop
+            }
+        } catch {
+            Fail "could not copy the folder to ${target}: $($_.Exception.Message)"
+            Finish 'Look' @("Move the folder somewhere shorter yourself, for example C:\Users\$env:USERNAME\ws, and run the setup again there.")
+        }
+        Did "copied to $target"
+    }
+    Say ''
+    Say "  From now on use $target (open that folder in VS Code). The folder here is not needed any more."
+    $pass = @()
+    if ($NoConsole) { $pass += '-NoConsole' }
+    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $target 'setup.ps1') @pass
+    exit $LASTEXITCODE
 }
 
 # --- 1. git ------------------------------------------------------------------------------------------------

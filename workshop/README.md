@@ -17,6 +17,7 @@ in the copy). The console gives its own commands the same folder and variables.
 | File | What it is |
 |---|---|
 | `commands.txt`, `commands.json` | Every command of the day in the order of the clock. The Harness Console shows the commands of each section on its Today page and can run them. |
+| `shell.cmd` | Windows: `workshop\shell` in the repository root (PowerShell or cmd) opens Git Bash with `stage-shell.sh` sourced. It needs no Git Bash of your own: it takes the portable git the setup brought. |
 | `stage-shell.sh` | `source` it once per terminal, in the repository root: the terminal goes into the console's copy, with the variables the commands need (see above). |
 | `branches.sh` | Makes the workshop's branches local: `ticket/TS-1xx` (one per ticket, only that ticket open) and `after-section-1` .. `after-section-5` (the harness and the fixes after each section). `setup.sh` runs it. |
 | `TS-104.agent.md` | The agent-ready version of TS-104 written in section 1. |

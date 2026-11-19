@@ -120,8 +120,10 @@ What you need:
 Download it: **Code > Download ZIP**, then unzip it. Or clone it with git (the green **Code** button gives its address).
 Both work for the whole day: in a ZIP folder the setup fetches the workshop's branches from GitHub.
 
-- On Windows, keep the folder path short: at most 135 characters, for example `C:\Users\<you>\ws\tinystream`.
-  Windows allows 260 characters for a file path, and the C compiler's files sit deep inside the folder.
+- On Windows, the folder path must be short: at most 80 characters. Windows allows 260 characters for a file path,
+  and a run writes its files deep inside the folder. A longer path (a ZIP unpacked in Downloads, say) is fine: the
+  setup copies the folder to `C:\Users\<you>\ws\ai-harness-workshop` and goes on there. Open that folder in VS Code
+  from then on.
 - Do not put the folder under OneDrive or another synced folder: keep it in a plain local folder.
 - Pick the place now. If you move the folder after the first start, you have to delete `.console-data` in it
   (this deletes everything you made in the console) and run the setup again.
@@ -301,7 +303,8 @@ First, run the setup again. It picks up where it stopped.
 | What you see | What to do |
 |---|---|
 | PowerShell says running scripts is disabled on this system. | Use the whole line, with `-ExecutionPolicy Bypass`: `powershell -ExecutionPolicy Bypass -File setup.ps1`. If a company policy still blocks it, the setup cannot run on this laptop; everything can still be read here on GitHub. |
-| `this folder's path has N characters: too long for Windows, which allows 260 per file.` | Move the folder to a shorter path, at most 135 characters (for example `C:\Users\<you>\ws`), and run the setup again. |
+| `this folder's path has N characters: too long for the runs` | The setup copies the folder to `C:\Users\<you>\ws\ai-harness-workshop` and goes on there by itself. Use that folder from then on. If the copy fails, move the folder to a path of at most 80 characters and run the setup again. |
+| Typing `bash` in PowerShell starts WSL or says it is not installed. | Use `workshop\shell` in the repository root instead: it opens Git Bash in the console's copy, with the portable git the setup brought. |
 | `winget is not available on this computer`, then `the Copilot CLI is not installed, so you stay on the fake model.` | You are at Try (fake model), and that is fine. Later, install the CLI from https://gh.io/install-copilot-readme and run the setup again. |
 | `Depth: Try (fake model)`, but you have Copilot. | Run the Copilot CLI command the setup prints in its last lines, type `/login`, then run the setup again. |
 | `checking your Copilot login: this can take up to 5 minutes; please wait, do not close the window` | Wait. If the check does not answer, the setup tries once more without it. |

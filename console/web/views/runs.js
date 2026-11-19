@@ -390,7 +390,10 @@ function buildStart(view, wanted, wantedHarness) {
     handover.hidden = !harness.value;
     price.textContent = fake ? FAKE_PRICE : unit ? costLine(unit.left, unit.budget, cap) : '';
 
-    start.disabled = busy || Boolean(open) || !enough || noTicket || !workflow.value;
+    // the model follows the setup until the person picks one: no start before the first answer, or a run meant to be
+    // free (the form shows the fake model while it waits) could go out on the person's Copilot a moment later
+    const deciding = personal && lastChoice.model === null && !setup?.depth && (!setup || setup.state === 'checking');
+    start.disabled = busy || Boolean(open) || !enough || noTicket || !workflow.value || deciding;
     gates.disabled = busy || Boolean(open);
     ctx.cli(runCommand({ kind: 'workflow', workflow: workflow.value, ticket: ticket.value, mode: modeValue(), overlay_from: harness.value, fake }));
   }

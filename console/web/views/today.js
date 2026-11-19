@@ -563,7 +563,7 @@ function commandRow(view, command, index) {
 
   const what = h('p', 'cmd-what', command.what || label);
   const why = command.why ? h('p', 'cmd-why', h('span', 'cmd-why-label', 'Why: '), command.why) : null;
-  const where = command.interactive ? 'your terminal (source workshop/stage-shell.sh)' : 'the console’s copy';
+  const where = command.interactive ? 'a workshop terminal (workshop\\shell)' : 'the console’s copy';
   const bar = h(
     'div',
     'term-bar',
@@ -707,7 +707,7 @@ function drawRow(view, row) {
   if (!job) {
     if (row.shownJob === 'none') return;
     placeholder(row, row.command.interactive
-      ? 'This one asks a question: copy it and run it in a terminal opened with source workshop/stage-shell.sh.'
+      ? 'This one asks a question: copy it and run it in a workshop terminal. Open one in the repository root with workshop\\shell (Windows), or source workshop/stage-shell.sh in Git Bash, macOS or Linux.'
       : row.command.started_from
         ? `Start it from ${row.command.started_from}, or press Recorded to see what it printed when we recorded the day.`
         : row.command.recorded

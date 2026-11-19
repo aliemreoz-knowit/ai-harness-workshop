@@ -2,3 +2,4 @@
 *.png binary
 *.y8 binary
 *.pptx binary
+*.cmd text eol=crlf
