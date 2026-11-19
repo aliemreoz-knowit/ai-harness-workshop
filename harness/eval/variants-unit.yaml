@@ -1,0 +1,42 @@
+# A unit's own experiment (sample for block 4): one new variant measured against
+# its baseline, both in one file so the leaderboard compares like with like.
+#
+#   python -m harness eval --variants variants-unit.yaml --tickets eval --repeats 3
+#
+# Question: does the "team" prompt template (harness/prompts/team/, which asks for
+# the ticket's acceptance criteria first and a cause/change/evidence summary) plus
+# the diff-size gate in the ladder buy a higher pass rate at a lower cost than team,
+# with one retry fewer?
+# Keys: see variants.yaml (same schema, same defaults).
+version: 1
+workflow: jira-to-pr
+
+defaults:
+  repeats: 1
+  roles: {planner: false, implementer: true, test_writer: false, reviewer: false}
+  models:
+    planner: claude-sonnet-5.5
+    implementer: claude-haiku-5.5
+    test_writer: claude-haiku-5.5
+    reviewer: claude-sonnet-5.5
+  retry_budget: 3
+  custom_instructions: true
+  prompt_template: v1
+  autonomy: human
+  gates: true
+  max_ai_credits: 40
+  timeout_s: 2400
+
+gate_weights: {misra: 2, no-heap: 3, sanitizers: 3, compliance: 2, diff-size: 1}
+
+variants:
+  team:
+    label: full team (4 roles), baseline
+    tests: orchestration
+    roles: {planner: true, implementer: true, test_writer: true, reviewer: true}
+  U1:
+    extends: team
+    label: team + team prompt, retry budget 2
+    tests: prompt quality vs iteration
+    prompt_template: team
+    retry_budget: 2

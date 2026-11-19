@@ -122,7 +122,7 @@ loop:
 
 policy:
   # Never writable by any role (preToolUse hook + permission handler + diff gate).
-  protected: ["include/**", "src/pool/**", ".github/**", "scripts/**", "harness/**",
+  protected: ["include/**", "src/pool/**", "src/malloc_guard.c", ".github/**", "scripts/**", "harness/**",
               ".devcontainer/**", "cmake/**", "third_party/**", "CMakeLists.txt",
               "CMakePresets.json", "AGENTS.md", ".gitattributes", ".gitignore"]
   # Protected paths a role may still write when its write scope lists them. Same
@@ -146,8 +146,9 @@ policy:
   # Diff policy (gate compliance): forbidden calls in added lines, per path glob.
   forbidden_calls:
     "src/**": [malloc, calloc, realloc, free, strcpy, strcat, sprintf, gets, system, popen,
-               execl, execv, execve, execvp, fork, dlopen]
-    "**": [gets, system, popen, execve, dlopen]
+               execl, execv, execve, execvp, fork, dlopen, posix_spawn, posix_spawnp]
+    # no process creation anywhere in the tree (tools/ and tests/ included)
+    "**": [gets, system, popen, execl, execv, execve, execvp, fork, dlopen, posix_spawn, posix_spawnp]
   license_header: "tinystream v2 -- {path}"
   license_spdx: MIT           # SPDX identifier in the first lines of every new C file (check.sh compliance: changed files too)
 
